@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: BUSL-1.1
+# Builds the image on every push to the release branch (and pull requests into it). The Dockerfile runs
+# `tsc --noEmit` and the Vite build, so a green job means the console type-checks and assembles. Nothing is pushed.
+name: ci
+
+on:
+  push:
+    branches: ["release"]
+  pull_request:
+    branches: ["release"]
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: thundervox-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: nginx config is valid
+        run: docker run --rm thundervox-web:ci nginx -t

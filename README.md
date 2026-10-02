@@ -6,7 +6,9 @@ calls are in progress. A single-page application served by nginx, talking to
 [`thundervox-server`](https://github.com/beiroun/thundervox-server) over
 `/api`.
 
-> Status: in design. The console is built once the server API is stable; see
+> Status: skeleton. The project builds (`tsc --noEmit` + Vite), the shell with
+> navigation is in place, the dashboard reads `GET /api/v1/info` from the
+> server; every other page is a placeholder until its server API exists. See
 > the platform roadmap in the umbrella repository.
 
 ---
@@ -37,11 +39,45 @@ calls are in progress. A single-page application served by nginx, talking to
 Conventions: functional components and hooks, API slices under `api/`,
 pages under `pages/`, no secrets or tokens in logs, comments in English.
 
+## Structure (`src/`)
+
+```
+api/          RTK Query: baseQuery (bearer from the auth slice, envelope unwrapping), one createApi per domain
+store/        Redux Toolkit: AuthSlice, RootReducer, store + typed hooks
+routes/       routes.tsx — createBrowserRouter, created once outside the React tree (React Router 8)
+pages/        one folder per page (Dashboard, Placeholder, NotFound; the rest arrive with the server API)
+components/   shared components (AppLayout: header with the server version, sidebar)
+shared/       navigation.ts — route paths and sidebar entries
+theme/        themeMantine.ts
+```
+
+Path alias `@/` → `src/`. The server envelope `{data, message, error}` is
+unwrapped in `transformResponse`; a `FAIL` envelope is an error even on a 2xx,
+and `describeApiError` turns any RTK Query error into the operator-facing text.
+
+## Scripts
+
+| Script | What it does |
+|---|---|
+| `npm run dev` | Vite dev server; `/api` is proxied to `http://127.0.0.1:8080` (a locally running `thundervox-server`) |
+| `npm run build` | `tsc --noEmit` then `vite build` → `dist/` (what the image serves) |
+| `npm run typecheck` | type check only |
+| `npm run update-types` | regenerates `src/api/generated/openapi.ts` from the server's OpenAPI document (`TVX_OPENAPI_URL`, default `http://127.0.0.1:8080/api/v1/openapi`). Runs `openapi-typescript` in an isolated `npx` environment with TypeScript 5, because TypeScript 7 (the native compiler used by the project) ships no programmatic API yet |
+
+Generated types are committed and never edited by hand; the hand-written part
+of the contract is only the envelope (`src/api/types.ts`).
+
 ## Run
 
 Deployed as an image from the umbrella repository's `docker-compose.yml` on
 the same host as the core and the server. nginx listens on port 80 (TLS is a
-separate step on the platform domain).
+separate step on the platform domain); `nginx/default.conf` serves the SPA
+(`try_files … /index.html`), caches hashed assets for a year and proxies
+`/api/` to `127.0.0.1:8080` unchanged (the server's context path is `/api/v1`).
+
+Image: `docker build -t thundervox-web:dev .` — `node:24-trixie-slim` builds,
+`nginx:1.30-trixie` serves; the build arg `APP_VERSION` (the git tag in CI)
+is shown in the header as the console version.
 
 ## License
 
