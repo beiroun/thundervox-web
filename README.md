@@ -34,7 +34,7 @@ calls are in progress. A single-page application served by nginx, talking to
 | Routing | React Router 8.4 (`createBrowserRouter`) |
 | Build | Vite 8.3, Node 24 LTS |
 | Types | generated from the server's OpenAPI document — never edited by hand |
-| Image | multi-stage Node → nginx 1.30: static files plus `location /api` proxied to the server on `127.0.0.1:8080`; published as `ghcr.io/beiroun/thundervox-web:<version>` on a tagged release |
+| Image | multi-stage Node → nginx 1.30 on `127.0.0.1:8081`: static files plus `location /api` proxied to the server on `127.0.0.1:8080`; published as `ghcr.io/beiroun/thundervox-web:<version>` on a tagged release |
 
 Conventions: functional components and hooks, API slices under `api/`,
 pages under `pages/`, no secrets or tokens in logs, comments in English.
@@ -70,10 +70,18 @@ of the contract is only the envelope (`src/api/types.ts`).
 ## Run
 
 Deployed as an image from the umbrella repository's `docker-compose.yml` on
-the same host as the core and the server. nginx listens on port 80 (TLS is a
-separate step on the platform domain); `nginx/default.conf` serves the SPA
+the same host as the core and the server. nginx listens on `127.0.0.1:8081`
+behind the deployment's edge proxy, which owns the public name
+(`console.<domain>`) and the certificate; `nginx/default.conf` serves the SPA
 (`try_files … /index.html`), caches hashed assets for a year and proxies
 `/api/` to `127.0.0.1:8080` unchanged (the server's context path is `/api/v1`).
+
+Because the SPA and the API answer on the same name, the browser makes
+same-origin calls and no CORS is involved. A console served from a different
+name than its API is the exception: build the image with
+`VITE_API_BASE_URL=https://server.<domain>/api/v1` and allow that origin on the
+server (`TVX_CORS_ORIGINS`). The value is compiled into the bundle, so it is a
+build argument, not a runtime variable.
 
 Image: `docker build -t thundervox-web:dev .` — `node:24-trixie-slim` builds,
 `nginx:1.30-trixie` serves; the build arg `APP_VERSION` (the git tag in CI)

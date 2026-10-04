@@ -6,10 +6,13 @@ import { NavLink as RouterNavLink, Outlet } from 'react-router';
 
 import { useGetPlatformInfoQuery } from '@/api/platformApi';
 import { navigationItems } from '@/shared/navigation';
+import { useDocumentTitle } from '@/shared/documentTitle';
 
 /** Shell of every page: header with the server version, sidebar navigation, page outlet. */
 export function AppLayout() {
   const { data: platformInfo } = useGetPlatformInfoQuery();
+
+  useDocumentTitle();
 
   return (
     <AppShell header={{ height: 56 }} navbar={{ width: 220, breakpoint: 'sm' }} padding="md">
