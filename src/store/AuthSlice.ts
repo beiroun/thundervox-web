@@ -2,31 +2,40 @@
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+import type { ConsoleUser } from '@/api/types';
+import { readStoredSession } from '@/shared/sessionPersistence';
+
 export interface AuthState {
-  /** JWT issued by POST /auth/login; null while logged out. Never logged. */
+  /** Bearer token from POST /auth/login; null while logged out. Never logged. */
   token: string | null;
-  login: string | null;
+  user: ConsoleUser | null;
 }
 
+const storedSession = readStoredSession();
+
 const initialState: AuthState = {
-  token: null,
-  login: null,
+  token: storedSession?.token ?? null,
+  user: storedSession?.user ?? null,
 };
 
-/** Operator session. Persistence and refresh come with the server's login endpoint. */
+/** Operator session. Persisted by the store (see store.ts); ended by a logout or by any 401 from the server. */
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    sessionStarted: (state, action: PayloadAction<{ token: string; login: string }>) => {
+    sessionStarted: (state, action: PayloadAction<{ token: string; user: ConsoleUser }>) => {
       state.token = action.payload.token;
-      state.login = action.payload.login;
+      state.user = action.payload.user;
+    },
+    /** GET /auth/me answered: the role or the flags may have changed since login. */
+    currentUserRefreshed: (state, action: PayloadAction<ConsoleUser>) => {
+      state.user = action.payload;
     },
     sessionEnded: (state) => {
       state.token = null;
-      state.login = null;
+      state.user = null;
     },
   },
 });
 
-export const { sessionStarted, sessionEnded } = authSlice.actions;
+export const { sessionStarted, currentUserRefreshed, sessionEnded } = authSlice.actions;
