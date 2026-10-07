@@ -37,7 +37,7 @@ hairline with the mark (navy disc, orange ring, bolt) and the small wordmark
 "ThunderVox by 84softworks" at the left, the operator (login, role badge),
 the log-out and the language / theme switches at the right; the primary
 navigation is the left column (a drawer under the bar on a phone) with the
-running versions, the website and the copyright at its foot; orange marks the active
+running versions and the copyright line at its foot; orange marks the active
 page, kickers, metric numbers and primary buttons; navy stays in the mark, the
 administrator badge and the active language segment. Fonts are self-hosted (`public/fonts`): **Onest** (Latin +
 Cyrillic) for everything, **Clash Display** for the wordmark only.

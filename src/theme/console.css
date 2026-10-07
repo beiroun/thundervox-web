@@ -358,8 +358,8 @@ body {
   border-bottom-color: transparent;
 }
 
-/* In the row the two versions stay left, the website and the copyright go right */
-.tvx-footer__site {
+/* In the row the two versions stay left, the copyright line goes right */
+.tvx-footer__rights {
   margin-left: auto;
 }
 
@@ -371,7 +371,7 @@ body {
   font-size: var(--tvx-text-caption);
 }
 
-.tvx-footer--stacked .tvx-footer__site {
+.tvx-footer--stacked .tvx-footer__rights {
   margin-left: 0;
 }
 

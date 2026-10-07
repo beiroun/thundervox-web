@@ -6,15 +6,15 @@ import { brand, consoleVersion } from '@/shared/brand';
 
 interface ConsoleFooterProps {
   /**
-   * Four lines one under another for the foot of the side column; the default is one row under a hairline
+   * Three lines one under another for the foot of the side column; the default is one row under a hairline
    * (the login page, which has no column).
    */
   stacked?: boolean;
 }
 
 /**
- * The running versions (server from GET /info, which is public, so the login page shows it too) and who makes
- * the console: the website and the copyright line.
+ * The running versions (server from GET /info, which is public, so the login page shows it too) and the
+ * copyright line, which names the website rather than an organization - there is none yet.
  */
 export function ConsoleFooter({ stacked = false }: ConsoleFooterProps) {
   const { t } = useLang();
@@ -28,10 +28,12 @@ export function ConsoleFooter({ stacked = false }: ConsoleFooterProps) {
       <span className="tvx-footer__console">
         {t.footer.console} {consoleVersion}
       </span>
-      <a className="tvx-footer__site" href={brand.website} target="_blank" rel="noreferrer">
-        {brand.websiteLabel}
-      </a>
-      <span className="tvx-footer__rights">{t.footer.rights}</span>
+      <span className="tvx-footer__rights">
+        {t.footer.copyright}{' '}
+        <a href={brand.website} target="_blank" rel="noreferrer">
+          {brand.websiteLabel}
+        </a>
+      </span>
     </footer>
   );
 }

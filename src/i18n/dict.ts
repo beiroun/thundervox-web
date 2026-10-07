@@ -43,7 +43,8 @@ export interface Copy {
     darkScheme: string;
   };
   footer: {
-    rights: string;
+    /** Before the website link: "© 2026" + 84softworks.com. */
+    copyright: string;
     server: string;
     console: string;
   };
@@ -238,7 +239,7 @@ const en: Copy = {
     darkScheme: 'Switch to the dark theme',
   },
   footer: {
-    rights: '© 2026 84softworks',
+    copyright: '© 2026',
     server: 'Server',
     console: 'Console',
   },
@@ -465,7 +466,7 @@ const ru: Copy = {
     darkScheme: 'Тёмная тема',
   },
   footer: {
-    rights: '© 2026 84softworks',
+    copyright: '© 2026',
     server: 'Сервер',
     console: 'Консоль',
   },
