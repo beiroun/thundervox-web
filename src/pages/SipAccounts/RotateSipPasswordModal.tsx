@@ -6,6 +6,7 @@ import { Alert, Button, Group, Modal, PasswordInput, Stack, Switch, Text } from 
 import { describeApiError } from '@/api/baseQuery';
 import { useRotateSipAccountPasswordMutation } from '@/api/sipAccountsApi';
 import type { SipAccount, SipAccountCredentials } from '@/api/types';
+import { useLang } from '@/i18n/LangContext';
 
 interface RotateSipPasswordModalProps {
   /** null = closed. */
@@ -16,8 +17,10 @@ interface RotateSipPasswordModalProps {
 
 /** Replaces the password of a number; the device must get the new one before its next registration. */
 export function RotateSipPasswordModal({ account, onClose, onRotated }: RotateSipPasswordModalProps) {
+  const { t } = useLang();
+
   return (
-    <Modal opened={account !== null} onClose={onClose} title={`New password for ${account?.username ?? ''}`}>
+    <Modal opened={account !== null} onClose={onClose} title={t.sipAccounts.rotate.title(account?.username ?? '')}>
       {account && <RotateForm key={account.id} account={account} onClose={onClose} onRotated={onRotated} />}
     </Modal>
   );
@@ -32,6 +35,7 @@ function RotateForm({
   onClose: () => void;
   onRotated: (credentials: SipAccountCredentials) => void;
 }) {
+  const { t } = useLang();
   const [rotatePassword, { isLoading, error }] = useRotateSipAccountPasswordMutation();
   const [passwordTyped, setPasswordTyped] = useState(false);
   const [password, setPassword] = useState('');
@@ -50,32 +54,29 @@ function RotateForm({
   return (
     <form onSubmit={submit}>
       <Stack gap="md">
-        <Text size="sm">
-          The old password stops working at the device's next registration. Until it gets the new password, the
-          device cannot register or call.
-        </Text>
+        <Text size="sm">{t.sipAccounts.rotate.body}</Text>
         <Switch
-          label="Type the password by hand"
+          label={t.common.typePasswordByHand}
           checked={passwordTyped}
           onChange={(event) => setPasswordTyped(event.currentTarget.checked)}
         />
         {passwordTyped && (
           <PasswordInput
-            label="Password"
-            description="8 to 64 characters: latin letters, digits and symbols, no spaces"
+            label={t.common.password}
+            description={t.sipAccounts.create.passwordHint}
             value={password}
             onChange={(event) => setPassword(event.currentTarget.value)}
             autoComplete="new-password"
             required
           />
         )}
-        {error && <Alert color="red">{describeApiError(error)}</Alert>}
+        {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose} disabled={isLoading}>
-            Cancel
+            {t.common.cancel}
           </Button>
-          <Button type="submit" color="orange" loading={isLoading}>
-            Replace password
+          <Button type="submit" loading={isLoading}>
+            {t.common.replacePassword}
           </Button>
         </Group>
       </Stack>

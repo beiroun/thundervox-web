@@ -6,6 +6,7 @@ import { Alert, Button, Group, Modal, PasswordInput, Stack, Switch, Text } from 
 import { describeApiError } from '@/api/baseQuery';
 import { useResetConsoleUserPasswordMutation } from '@/api/consoleUsersApi';
 import type { ConsoleUser, ConsoleUserCredentials } from '@/api/types';
+import { useLang } from '@/i18n/LangContext';
 
 interface ResetConsolePasswordModalProps {
   /** null = closed. */
@@ -16,8 +17,10 @@ interface ResetConsolePasswordModalProps {
 
 /** New password for a console user; every open session of that user ends with it. */
 export function ResetConsolePasswordModal({ user, onClose, onReset }: ResetConsolePasswordModalProps) {
+  const { t } = useLang();
+
   return (
-    <Modal opened={user !== null} onClose={onClose} title={`New password for ${user?.login ?? ''}`}>
+    <Modal opened={user !== null} onClose={onClose} title={t.consoleUsers.reset.title(user?.login ?? '')}>
       {user && <ResetForm key={user.id} user={user} onClose={onClose} onReset={onReset} />}
     </Modal>
   );
@@ -32,6 +35,7 @@ function ResetForm({
   onClose: () => void;
   onReset: (credentials: ConsoleUserCredentials) => void;
 }) {
+  const { t } = useLang();
   const [resetPassword, { isLoading, error }] = useResetConsoleUserPasswordMutation();
   const [passwordTyped, setPasswordTyped] = useState(false);
   const [password, setPassword] = useState('');
@@ -50,29 +54,29 @@ function ResetForm({
   return (
     <form onSubmit={submit}>
       <Stack gap="md">
-        <Text size="sm">{user.login} is logged out everywhere and logs in again with the new password.</Text>
+        <Text size="sm">{t.consoleUsers.reset.body(user.login)}</Text>
         <Switch
-          label="Type the password by hand"
+          label={t.common.typePasswordByHand}
           checked={passwordTyped}
           onChange={(event) => setPasswordTyped(event.currentTarget.checked)}
         />
         {passwordTyped && (
           <PasswordInput
-            label="Password"
-            description="At least 10 characters"
+            label={t.common.password}
+            description={t.consoleUsers.reset.passwordHint}
             value={password}
             onChange={(event) => setPassword(event.currentTarget.value)}
             autoComplete="new-password"
             required
           />
         )}
-        {error && <Alert color="red">{describeApiError(error)}</Alert>}
+        {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose} disabled={isLoading}>
-            Cancel
+            {t.common.cancel}
           </Button>
-          <Button type="submit" color="orange" loading={isLoading}>
-            Replace password
+          <Button type="submit" loading={isLoading}>
+            {t.common.replacePassword}
           </Button>
         </Group>
       </Stack>

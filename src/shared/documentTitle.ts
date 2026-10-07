@@ -3,29 +3,36 @@
 import { useEffect } from 'react';
 import { useMatches } from 'react-router';
 
-/** Product name of this application; the suffix of every document title and the fallback when a route has none. */
-export const consoleName = 'ThunderVox Console';
+import { useLang } from '@/i18n/LangContext';
+import type { Copy } from '@/i18n/dict';
 
-/** What a route contributes to the document title, set as its `handle` in the router. */
+export type PageKey = keyof Copy['pages'];
+
+/** What a route contributes to the document title, set as its `handle` in the router: the page's copy key. */
 export interface RouteTitleHandle {
-  title?: string;
+  page?: PageKey;
+}
+
+export function pageHandle(page: PageKey): RouteTitleHandle {
+  return { page };
 }
 
 /**
- * Keeps document.title in step with the matched route.
+ * Keeps document.title in step with the matched route and the language: "<page> · <console name>".
  *
  * A single-page application never reloads, so the browser tab, the history entries and a bookmark would all
- * read the same name without this; the deepest matched route that declares a title wins.
+ * read the same name without this; the deepest matched route that declares a page wins.
  */
 export function useDocumentTitle(): void {
   const matches = useMatches();
+  const { t } = useLang();
 
   useEffect(() => {
-    const deepestTitle = matches
-      .map((match) => (match.handle as RouteTitleHandle | undefined)?.title)
-      .filter((title): title is string => Boolean(title))
+    const deepestPage = matches
+      .map((match) => (match.handle as RouteTitleHandle | undefined)?.page)
+      .filter((page): page is PageKey => Boolean(page))
       .at(-1);
 
-    document.title = deepestTitle ? `${deepestTitle} – ${consoleName}` : consoleName;
-  }, [matches]);
+    document.title = deepestPage ? `${t.pages[deepestPage].title} · ${t.consoleName}` : t.consoleName;
+  }, [matches, t]);
 }

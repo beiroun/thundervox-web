@@ -6,16 +6,22 @@ import type { ConsoleRole } from '@/api/types';
  * What each console role may do - the same rules the server enforces (ConsoleRole.mayManage, SecurityConfig).
  * The console only hides what would be refused anyway; the server stays the authority.
  */
-export const consoleRoleTitles: Record<ConsoleRole, string> = {
-  READER: 'Reader',
-  ADMINISTRATOR: 'Administrator',
-  SUPER_ADMINISTRATOR: 'Super administrator',
+
+/** Every role, highest first - the order of the legend. */
+export const consoleRoles: ReadonlyArray<ConsoleRole> = ['SUPER_ADMINISTRATOR', 'ADMINISTRATOR', 'READER'];
+
+/** Language-invariant short form shown in badges; the full names are in the dictionary and the legend. */
+export const consoleRoleAbbreviations: Record<ConsoleRole, string> = {
+  SUPER_ADMINISTRATOR: 'SA',
+  ADMINISTRATOR: 'ADM',
+  READER: 'RD',
 };
 
+/** Brand palette: the super administrator in the accent, administrators in the navy, readers neutral. */
 export const consoleRoleColors: Record<ConsoleRole, string> = {
+  SUPER_ADMINISTRATOR: 'accent',
+  ADMINISTRATOR: 'brand',
   READER: 'gray',
-  ADMINISTRATOR: 'blue',
-  SUPER_ADMINISTRATOR: 'grape',
 };
 
 /** Creating, renaming, re-keying, blocking and deleting SIP numbers. */

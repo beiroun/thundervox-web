@@ -6,6 +6,7 @@ import { Alert, Button, Group, Modal, PasswordInput, SegmentedControl, Stack, Sw
 import { describeApiError } from '@/api/baseQuery';
 import { useCreateSipAccountMutation } from '@/api/sipAccountsApi';
 import type { SipAccountCredentials, SipAccountKind } from '@/api/types';
+import { useLang } from '@/i18n/LangContext';
 
 interface CreateSipAccountModalProps {
   opened: boolean;
@@ -13,22 +14,13 @@ interface CreateSipAccountModalProps {
   onCreated: (credentials: SipAccountCredentials) => void;
 }
 
-const generatedRangeHint: Record<SipAccountKind, string> = {
-  PANEL: 'The server picks the next free panel number (2xxxxxxx).',
-  CLIENT: 'The server picks the next free client number (1xxxxxxx).',
-};
-
-/** What the operator's backend knows the endpoint by - the key it asks the service API for this number with. */
-export const externalIdHint: Record<SipAccountKind, string> = {
-  PANEL: 'Device id in the operator backend - for Modus the panel\'s ip:port, which selects the video shown when it calls. Optional for a test number.',
-  CLIENT: 'Subscriber account (ЛС) in the operator backend - whom to wake with a push when this number is called. Optional for a test number.',
-};
-
 /**
  * New SIP number. The normal way is to let the server pick both the number and the password; typing either is
  * allowed for numbers that must match an existing device configuration.
  */
 export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipAccountModalProps) {
+  const { t } = useLang();
+  const copy = t.sipAccounts.create;
   const [createSipAccount, { isLoading, error, reset }] = useCreateSipAccountMutation();
   const [kind, setKind] = useState<SipAccountKind>('PANEL');
   const [name, setName] = useState('');
@@ -68,7 +60,7 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
   };
 
   return (
-    <Modal opened={opened} onClose={close} title="New SIP number">
+    <Modal opened={opened} onClose={close} title={copy.title}>
       <form onSubmit={submit}>
         <Stack gap="md">
           <SegmentedControl
@@ -76,13 +68,13 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
             value={kind}
             onChange={(value) => setKind(value as SipAccountKind)}
             data={[
-              { value: 'PANEL', label: 'Panel' },
-              { value: 'CLIENT', label: 'App client' },
+              { value: 'PANEL', label: t.sipAccounts.kinds.PANEL },
+              { value: 'CLIENT', label: t.sipAccounts.kinds.CLIENT },
             ]}
           />
           <TextInput
-            label="Name"
-            description="Any text, Russian or Latin - shown in the console and later as the caller name. A label, not a key."
+            label={copy.name}
+            description={copy.nameHint}
             value={name}
             onChange={(event) => setName(event.currentTarget.value)}
             maxLength={128}
@@ -90,22 +82,22 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
             data-autofocus
           />
           <TextInput
-            label="External id"
-            description={externalIdHint[kind]}
+            label={copy.externalId}
+            description={copy.externalIdHint[kind]}
             value={externalId}
             onChange={(event) => setExternalId(event.currentTarget.value)}
             maxLength={128}
           />
 
           <Switch
-            label="Type the number by hand"
+            label={copy.typeNumberByHand}
             checked={numberTyped}
             onChange={(event) => setNumberTyped(event.currentTarget.checked)}
           />
           {numberTyped ? (
             <TextInput
-              label="Number"
-              description="Digits only, 2 to 16"
+              label={copy.number}
+              description={copy.numberHint}
               value={number}
               onChange={(event) => setNumber(event.currentTarget.value)}
               inputMode="numeric"
@@ -113,19 +105,19 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
             />
           ) : (
             <Text size="sm" c="dimmed">
-              {generatedRangeHint[kind]}
+              {copy.generatedNumberHint[kind]}
             </Text>
           )}
 
           <Switch
-            label="Type the password by hand"
+            label={t.common.typePasswordByHand}
             checked={passwordTyped}
             onChange={(event) => setPasswordTyped(event.currentTarget.checked)}
           />
           {passwordTyped ? (
             <PasswordInput
-              label="Password"
-              description="8 to 64 characters: latin letters, digits and symbols, no spaces"
+              label={t.common.password}
+              description={copy.passwordHint}
               value={password}
               onChange={(event) => setPassword(event.currentTarget.value)}
               autoComplete="new-password"
@@ -133,17 +125,17 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
             />
           ) : (
             <Text size="sm" c="dimmed">
-              The server generates a 16-character password and shows it once.
+              {copy.generatedPasswordHint}
             </Text>
           )}
 
-          {error && <Alert color="red">{describeApiError(error)}</Alert>}
+          {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
           <Group justify="flex-end">
             <Button variant="default" onClick={close} disabled={isLoading}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" loading={isLoading}>
-              Create
+              {t.common.create}
             </Button>
           </Group>
         </Stack>

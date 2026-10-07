@@ -1,0 +1,427 @@
+/* SPDX-License-Identifier: BUSL-1.1 */
+/* Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE. */
+
+/*
+ * Page blocks of the console in the 84softworks skin (84softworks-landing home.css is the reference): a navy
+ * header band with the wordmark and white navigation, an editorial body where the only separator is a hairline,
+ * an orange kicker above every title, metric numbers in the accent. Mantine components are themed in
+ * themeMantine.ts; everything here is layout that Mantine has no component for.
+ */
+
+body {
+  font-family: var(--tvx-font);
+  letter-spacing: var(--tvx-tracking);
+}
+
+/* Page container: left-aligned in the working area (an admin reads from the left edge, next to the column),
+   capped for line length on very wide screens. */
+.tvx-wrap {
+  width: 100%;
+  max-width: var(--tvx-page-max-width);
+  margin: 0;
+  padding: 0 var(--tvx-page-gutter);
+}
+
+/* The login page has no column: its container is centred like the landing's */
+.tvx-wrap--centered {
+  margin: 0 auto;
+}
+
+/* --- Top bar: the console's own header on the canvas, one hairline frame together with the side column.
+   The brand lives in the mark (navy disc, orange ring) and the small wordmark, not in a full-bleed band - the
+   landing's colour is rationed here the way its body rations it. --- */
+.tvx-topbar {
+  background: var(--mantine-color-body);
+  border-bottom: 1px solid var(--tvx-hairline);
+  color: var(--mantine-color-text);
+}
+
+/* Full width, everything gathered at the left edge: the mark sits above the column, the switches follow it.
+   24px matches the column's own padding, so the mark and the active dot share one left edge. */
+.tvx-header {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-lg);
+  height: var(--tvx-header-height);
+  padding: 0 24px;
+}
+
+.tvx-header__left {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-md);
+  min-width: 0;
+}
+
+/* Mark + wordmark + byline: the product name in the display face, "by 84softworks" in the body face next to it */
+.tvx-brandmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mantine-color-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tvx-brandmark__icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.tvx-wordmark {
+  font-family: var(--tvx-font-wordmark);
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  padding-top: 2px; /* optical centre of the display face next to the round mark */
+}
+
+.tvx-byline {
+  font-size: var(--tvx-text-caption);
+  letter-spacing: 0;
+  color: var(--tvx-ash);
+  padding-top: 3px;
+}
+
+.tvx-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  flex-shrink: 0;
+}
+
+/* Icon buttons in the top bar (theme, burger): ink, a hairline-coloured fill on hover */
+.tvx-topbar-iconbtn {
+  color: var(--tvx-ink-soft);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.tvx-topbar-iconbtn:hover {
+  color: var(--mantine-color-text);
+  background: var(--mantine-color-default-hover);
+}
+
+/* --- Language toggle: a pill in the chrome's own colours; the active segment carries the navy --- */
+.tvx-langtoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--tvx-hairline);
+  border-radius: var(--tvx-r-pill);
+}
+
+.tvx-langtoggle button {
+  border: 0;
+  border-radius: var(--tvx-r-pill);
+  padding: 4px 11px;
+  background: transparent;
+  font-family: var(--tvx-font);
+  font-size: var(--tvx-text-caption);
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--tvx-ink-soft);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tvx-langtoggle button:hover {
+  color: var(--mantine-color-text);
+}
+
+.tvx-langtoggle button.is-active {
+  background: var(--tvx-toggle-active-bg);
+  color: var(--tvx-toggle-active-fg);
+}
+
+/* --- Side column: the primary navigation, the operator at its foot; a drawer under the band on a phone --- */
+.tvx-sidenav {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 24px 16px;
+  background: var(--mantine-color-body);
+  border-right: 1px solid var(--tvx-hairline);
+}
+
+.tvx-sidenav__links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.tvx-sidenav__links a {
+  position: relative;
+  display: block;
+  padding: 10px 0 10px 16px;
+  color: var(--mantine-color-text);
+  text-decoration: none;
+  font-size: var(--tvx-text-nav);
+  opacity: 0.8;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.tvx-sidenav__links a:hover,
+.tvx-sidenav__links a.is-active {
+  opacity: 1;
+}
+
+/* Active page: accent text and the orange dot, here on the left of the label */
+.tvx-sidenav__links a.is-active {
+  color: var(--tvx-accent);
+}
+
+.tvx-sidenav__links a.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 50%;
+  background: var(--tvx-accent);
+}
+
+/* The operator: login, role, log out - under the links, above the column's bottom edge */
+.tvx-sidenav__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--tvx-hairline);
+  font-size: var(--tvx-text-nav);
+}
+
+.tvx-sidenav__user-login {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Page --- */
+.tvx-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--tvx-header-height));
+}
+
+.tvx-page__body {
+  flex: 1;
+  padding: 40px 0 64px;
+}
+
+.tvx-page__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-lg);
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+/* Orange label above a title - the landing's section kicker */
+.tvx-kicker {
+  font-size: var(--tvx-text-nav);
+  color: var(--tvx-accent);
+  margin-bottom: 12px;
+}
+
+.tvx-title {
+  font-size: var(--tvx-text-title);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: var(--tvx-tracking);
+}
+
+.tvx-lede {
+  font-size: var(--tvx-text-subheading);
+  line-height: 1.33;
+  letter-spacing: -0.55px;
+  color: var(--tvx-ash);
+  max-width: 720px;
+  margin-top: 16px;
+}
+
+/* A block under a hairline: the subheading in 22px, then whatever it holds */
+.tvx-section {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--tvx-hairline);
+}
+
+.tvx-section__title {
+  font-size: var(--tvx-text-subheading);
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: -0.55px;
+  margin-bottom: 16px;
+}
+
+.tvx-body {
+  font-size: 18px;
+  line-height: 1.56;
+  letter-spacing: -0.45px;
+  max-width: 720px;
+}
+
+.tvx-muted {
+  color: var(--tvx-ash);
+}
+
+/* --- Metrics: the landing's metric rows, numbers in the accent --- */
+.tvx-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  column-gap: var(--mantine-spacing-xl);
+}
+
+.tvx-metric {
+  padding: 24px 0;
+  border-top: 1px solid var(--tvx-hairline);
+}
+
+.tvx-metric__num {
+  font-size: var(--tvx-text-metric);
+  line-height: 1;
+  letter-spacing: var(--tvx-tracking);
+  color: var(--tvx-accent);
+}
+
+.tvx-metric__lbl {
+  margin-top: 8px;
+  font-size: var(--tvx-text-nav);
+  color: var(--tvx-ash);
+}
+
+/* --- Label / value rows (server facts, legal) --- */
+.tvx-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--mantine-spacing-lg);
+  padding: 16px 0;
+  border-top: 1px solid var(--tvx-hairline);
+  font-size: var(--tvx-text-nav);
+}
+
+.tvx-row__lbl {
+  color: var(--tvx-ash);
+  flex-shrink: 0;
+}
+
+.tvx-row__val {
+  text-align: right;
+  max-width: 720px;
+}
+
+.tvx-row__val a,
+.tvx-body a,
+.tvx-footer a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--tvx-hairline);
+  padding-bottom: 2px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tvx-row__val a:hover,
+.tvx-body a:hover,
+.tvx-footer a:hover {
+  color: var(--tvx-accent);
+  border-color: var(--tvx-accent);
+}
+
+/* --- Footer: one hairline, one muted line --- */
+.tvx-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px var(--mantine-spacing-lg);
+  padding: 24px 0 32px;
+  border-top: 1px solid var(--tvx-hairline);
+  font-size: 14px;
+  color: var(--tvx-ash);
+}
+
+.tvx-footer a {
+  border-bottom-color: transparent;
+}
+
+/* --- Login: the band without navigation, the form as a flat card on the canvas --- */
+.tvx-login {
+  width: 100%;
+  max-width: 420px;
+  margin: 64px auto 0;
+}
+
+.tvx-login__card {
+  margin-top: 32px;
+  padding: 32px;
+  border: 1px solid var(--tvx-hairline);
+  background: var(--tvx-paper);
+}
+
+/* --- Role legend: abbreviation badge next to its full name --- */
+.tvx-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px var(--mantine-spacing-lg);
+  font-size: 14px;
+  color: var(--tvx-ash);
+}
+
+.tvx-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .tvx-byline {
+    display: none;
+  }
+
+  .tvx-header {
+    gap: var(--mantine-spacing-md);
+    padding: 0 16px;
+  }
+
+  /* The column becomes a full-width drawer under the top bar */
+  .tvx-sidenav {
+    padding: 8px 16px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--tvx-hairline);
+  }
+
+  .tvx-sidenav__links a {
+    padding: 14px 0 14px 16px;
+    font-size: 18px;
+  }
+
+  .tvx-page__body {
+    padding: 24px 0 48px;
+  }
+
+  .tvx-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .tvx-row__val {
+    text-align: left;
+  }
+
+  .tvx-login {
+    margin-top: 32px;
+  }
+
+  .tvx-login__card {
+    padding: 24px;
+  }
+}

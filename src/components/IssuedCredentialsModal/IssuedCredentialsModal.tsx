@@ -3,6 +3,8 @@
 import { ActionIcon, Alert, Button, Code, CopyButton, Group, Modal, Stack, Text, Tooltip } from '@mantine/core';
 import { IconCheck, IconCopy, IconKey } from '@tabler/icons-react';
 
+import { useLang } from '@/i18n/LangContext';
+
 export interface IssuedCredentialField {
   label: string;
   value: string;
@@ -22,13 +24,14 @@ interface IssuedCredentialsModalProps {
  * keeps only its hash - so the window says so and offers a copy button for every value.
  */
 export function IssuedCredentialsModal({ fields, title, containsGeneratedPassword, onClose }: IssuedCredentialsModalProps) {
+  const { t } = useLang();
+
   return (
     <Modal opened={fields !== null} onClose={onClose} title={title} closeOnClickOutside={false}>
       <Stack gap="md">
         {containsGeneratedPassword && (
-          <Alert color="yellow" icon={<IconKey size={18} />}>
-            Copy the password now: it is not stored and will not be shown again. A lost password is replaced with a
-            new one.
+          <Alert color="accent" icon={<IconKey size={18} />}>
+            {t.credentialsModal.generatedPasswordWarning}
           </Alert>
         )}
         {fields?.map((field) => (
@@ -41,8 +44,13 @@ export function IssuedCredentialsModal({ fields, title, containsGeneratedPasswor
             </div>
             <CopyButton value={field.value}>
               {({ copied, copy }) => (
-                <Tooltip label={copied ? 'Copied' : 'Copy'}>
-                  <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy} aria-label={`Copy ${field.label}`}>
+                <Tooltip label={copied ? t.common.copied : t.common.copy}>
+                  <ActionIcon
+                    variant="subtle"
+                    color={copied ? 'teal' : 'gray'}
+                    onClick={copy}
+                    aria-label={t.common.copyValue(field.label)}
+                  >
                     {copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
                   </ActionIcon>
                 </Tooltip>
@@ -51,7 +59,7 @@ export function IssuedCredentialsModal({ fields, title, containsGeneratedPasswor
           </Group>
         ))}
         <Group justify="flex-end">
-          <Button onClick={onClose}>Done</Button>
+          <Button onClick={onClose}>{t.common.done}</Button>
         </Group>
       </Stack>
     </Modal>

@@ -9,6 +9,7 @@ import {
 
 import type { RootState } from '@/store/store';
 import type { BaseApiResponse } from '@/api/types';
+import type { Copy } from '@/i18n/dict';
 import { sessionEnded } from '@/store/AuthSlice';
 
 /**
@@ -47,18 +48,24 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
   return result;
 };
 
-/** Unwraps the server envelope; a FAIL envelope on a 2xx is treated as an error, not as data. */
+/**
+ * Unwraps the server envelope; a FAIL envelope on a 2xx is treated as an error, not as data. The thrown message
+ * is the server's own text, or empty when it sent none - describeApiError() fills that in the operator's language.
+ */
 export function unwrapEnvelope<T>(response: BaseApiResponse<T>): T {
   if (response.message !== 'OK' || response.data === null) {
-    throw new Error(response.error?.localizedMessage ?? response.error?.message ?? 'Empty response');
+    throw new Error(response.error?.localizedMessage ?? response.error?.message ?? '');
   }
   return response.data;
 }
 
-/** Operator-facing text for an RTK Query error: the envelope's localized message when the server sent one. */
-export function describeApiError(error: FetchBaseQueryError | { message?: string } | undefined): string {
+/**
+ * Operator-facing text for an RTK Query error: the envelope's localized message when the server sent one,
+ * otherwise a generic line from the dictionary (`copy` is the active language's `api` block).
+ */
+export function describeApiError(error: FetchBaseQueryError | { message?: string } | undefined, copy: Copy['api']): string {
   if (!error) {
-    return 'Unknown error';
+    return copy.unknownError;
   }
   if ('status' in error) {
     const envelope = error.data as Partial<BaseApiResponse<unknown>> | undefined;
@@ -67,9 +74,9 @@ export function describeApiError(error: FetchBaseQueryError | { message?: string
       return fromServer;
     }
     if (error.status === 'FETCH_ERROR') {
-      return 'Server is unreachable';
+      return copy.unreachable;
     }
-    return `Request failed (${String(error.status)})`;
+    return copy.requestFailed(String(error.status));
   }
-  return error.message ?? 'Unknown error';
+  return error.message || copy.emptyResponse;
 }

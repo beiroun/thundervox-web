@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
 import { useState, type FormEvent } from 'react';
-import { Alert, Button, Center, Group, Paper, PasswordInput, Stack, TextInput, Title } from '@mantine/core';
-import { IconBolt } from '@tabler/icons-react';
+import { Alert, Button, PasswordInput, Stack, TextInput } from '@mantine/core';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 
 import { describeApiError } from '@/api/baseQuery';
 import { useLogInMutation } from '@/api/authApi';
-import { sessionStarted } from '@/store/AuthSlice';
-import { useAppDispatch, useAppSelector } from '@/store/store';
+import { ConsoleFooter } from '@/components/ConsoleFooter/ConsoleFooter';
+import { ConsoleHeader } from '@/components/ConsoleHeader/ConsoleHeader';
+import type { LoginRedirectState } from '@/components/RequireSession/RequireSession';
+import { useLang } from '@/i18n/LangContext';
 import { routePaths } from '@/shared/navigation';
 import { useDocumentTitle } from '@/shared/documentTitle';
-import type { LoginRedirectState } from '@/components/RequireSession/RequireSession';
+import { sessionStarted } from '@/store/AuthSlice';
+import { useAppDispatch, useAppSelector } from '@/store/store';
 
-/** Login form; on success returns the operator to the page that sent them here. */
+/** Login form under the top bar; on success returns the operator to the page that sent them here. */
 export function Login() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLang();
   const token = useAppSelector((state) => state.auth.token);
   const [logIn, { isLoading, error }] = useLogInMutation();
   const [login, setLogin] = useState('');
@@ -43,36 +46,40 @@ export function Login() {
   };
 
   return (
-    <Center mih="100vh" p="md">
-      <Paper withBorder shadow="sm" p="xl" w={360}>
-        <form onSubmit={submit}>
-          <Stack gap="md">
-            <Group gap="xs">
-              <IconBolt size={24} />
-              <Title order={3}>ThunderVox Console</Title>
-            </Group>
-            <TextInput
-              label="Login"
-              value={login}
-              onChange={(event) => setLogin(event.currentTarget.value)}
-              autoComplete="username"
-              required
-              autoFocus
-            />
-            <PasswordInput
-              label="Password"
-              value={password}
-              onChange={(event) => setPassword(event.currentTarget.value)}
-              autoComplete="current-password"
-              required
-            />
-            {error && <Alert color="red">{describeApiError(error)}</Alert>}
-            <Button type="submit" loading={isLoading} fullWidth>
-              Log in
-            </Button>
-          </Stack>
-        </form>
-      </Paper>
-    </Center>
+    <>
+      <ConsoleHeader />
+      <div className="tvx-wrap tvx-wrap--centered tvx-page">
+        <div className="tvx-page__body">
+          <div className="tvx-login">
+            <div className="tvx-kicker">{t.pages.login.kicker}</div>
+            <h1 className="tvx-title">{t.pages.login.title}</h1>
+            <form className="tvx-login__card" onSubmit={submit}>
+              <Stack gap="md">
+                <TextInput
+                  label={t.login.login}
+                  value={login}
+                  onChange={(event) => setLogin(event.currentTarget.value)}
+                  autoComplete="username"
+                  required
+                  autoFocus
+                />
+                <PasswordInput
+                  label={t.login.password}
+                  value={password}
+                  onChange={(event) => setPassword(event.currentTarget.value)}
+                  autoComplete="current-password"
+                  required
+                />
+                {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
+                <Button type="submit" loading={isLoading} fullWidth>
+                  {t.login.submit}
+                </Button>
+              </Stack>
+            </form>
+          </div>
+        </div>
+        <ConsoleFooter />
+      </div>
+    </>
   );
 }

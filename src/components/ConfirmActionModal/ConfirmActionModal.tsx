@@ -3,6 +3,8 @@
 import type { ReactNode } from 'react';
 import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 
+import { useLang } from '@/i18n/LangContext';
+
 interface ConfirmActionModalProps {
   opened: boolean;
   title: string;
@@ -28,6 +30,8 @@ export function ConfirmActionModal({
   onConfirm,
   onClose,
 }: ConfirmActionModalProps) {
+  const { t } = useLang();
+
   return (
     <Modal opened={opened} onClose={onClose} title={title}>
       <Stack gap="md">
@@ -35,7 +39,7 @@ export function ConfirmActionModal({
         {error && <Alert color="red">{error}</Alert>}
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose} disabled={loading}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button color={confirmColor} onClick={onConfirm} loading={loading}>
             {confirmLabel}

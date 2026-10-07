@@ -6,7 +6,8 @@ import { Alert, Button, Group, Modal, PasswordInput, Select, Stack, Switch, Text
 import { describeApiError } from '@/api/baseQuery';
 import { useCreateConsoleUserMutation } from '@/api/consoleUsersApi';
 import type { ConsoleRole, ConsoleUserCredentials } from '@/api/types';
-import { consoleRoleTitles } from '@/shared/consoleRoles';
+import { useLang } from '@/i18n/LangContext';
+import { consoleRoleAbbreviations } from '@/shared/consoleRoles';
 
 interface CreateConsoleUserModalProps {
   opened: boolean;
@@ -18,6 +19,8 @@ interface CreateConsoleUserModalProps {
 
 /** New console user with a role the acting user is allowed to grant. */
 export function CreateConsoleUserModal({ opened, grantableRoles, onClose, onCreated }: CreateConsoleUserModalProps) {
+  const { t } = useLang();
+  const copy = t.consoleUsers.create;
   const [createConsoleUser, { isLoading, error, reset }] = useCreateConsoleUserMutation();
   const [login, setLogin] = useState('');
   const [role, setRole] = useState<ConsoleRole | null>(null);
@@ -54,12 +57,12 @@ export function CreateConsoleUserModal({ opened, grantableRoles, onClose, onCrea
   };
 
   return (
-    <Modal opened={opened} onClose={close} title="New console user">
+    <Modal opened={opened} onClose={close} title={copy.title}>
       <form onSubmit={submit}>
         <Stack gap="md">
           <TextInput
-            label="Login"
-            description="3 to 64 characters: latin letters, digits, '.', '_' or '-'"
+            label={copy.login}
+            description={copy.loginHint}
             value={login}
             onChange={(event) => setLogin(event.currentTarget.value)}
             autoComplete="off"
@@ -67,22 +70,25 @@ export function CreateConsoleUserModal({ opened, grantableRoles, onClose, onCrea
             data-autofocus
           />
           <Select
-            label="Role"
-            data={grantableRoles.map((grantable) => ({ value: grantable, label: consoleRoleTitles[grantable] }))}
+            label={copy.role}
+            data={grantableRoles.map((grantable) => ({
+              value: grantable,
+              label: `${consoleRoleAbbreviations[grantable]} – ${t.roles.titles[grantable]}`,
+            }))}
             value={selectedRole}
             onChange={(value) => setRole(value as ConsoleRole | null)}
             allowDeselect={false}
             required
           />
           <Switch
-            label="Type the password by hand"
+            label={t.common.typePasswordByHand}
             checked={passwordTyped}
             onChange={(event) => setPasswordTyped(event.currentTarget.checked)}
           />
           {passwordTyped ? (
             <PasswordInput
-              label="Password"
-              description="At least 10 characters"
+              label={t.common.password}
+              description={copy.passwordHint}
               value={password}
               onChange={(event) => setPassword(event.currentTarget.value)}
               autoComplete="new-password"
@@ -90,16 +96,16 @@ export function CreateConsoleUserModal({ opened, grantableRoles, onClose, onCrea
             />
           ) : (
             <Text size="sm" c="dimmed">
-              The server generates a password and shows it once - hand it over to the user.
+              {copy.generatedPasswordHint}
             </Text>
           )}
-          {error && <Alert color="red">{describeApiError(error)}</Alert>}
+          {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
           <Group justify="flex-end">
             <Button variant="default" onClick={close} disabled={isLoading}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" loading={isLoading} disabled={!selectedRole}>
-              Create
+              {t.common.create}
             </Button>
           </Group>
         </Stack>

@@ -1,0 +1,68 @@
+/* SPDX-License-Identifier: BUSL-1.1 */
+/* Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE. */
+
+/*
+ * Design tokens of the console - the 84softworks skin (84softworks-landing design.md §6): a Slate navy band for
+ * the header, a warm orange micro-accent on the page, an achromatic editorial body with hairline dividers,
+ * weight 400 everywhere, radius only pill (9999px) or none, no shadows.
+ *
+ * Mantine's own semantic variables (body, text, dimmed, default border) come from the theme in themeMantine.ts;
+ * these tokens cover what Mantine has no name for. The dark scheme keeps the band navy and the accent orange, and
+ * tints the body with the brand hue instead of going grey.
+ */
+:root {
+  /* --- Brand band (Slate navy) - the header in both schemes --- */
+  --tvx-brand: #212842;
+  --tvx-brand-rgb: 33, 40, 66;
+  --tvx-on-brand: #ffffff;
+
+  /* --- Accent (warm orange) - kickers, metric numbers, active marks, CTA fill --- */
+  --tvx-accent: #dd5410;
+  --tvx-on-accent: #ffffff;
+
+  /* --- Editorial neutrals (light) --- */
+  --tvx-canvas: #ffffff;
+  --tvx-paper: #ffffff;
+  --tvx-ink: #0a0a0a;
+  --tvx-ink-soft: #404040;
+  --tvx-ash: #a3a3a3; /* kickers, column headings, captions */
+  --tvx-hairline: #e5e7eb; /* the only structural divider */
+
+  /* --- Type - Onest (Latin + Cyrillic) for everything, Clash Display for the wordmark only --- */
+  --tvx-font: 'Onest', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --tvx-font-wordmark: 'Clash Display', ui-sans-serif, system-ui, sans-serif;
+  --tvx-tracking: -0.025em;
+
+  --tvx-text-nav: 16px;
+  --tvx-text-caption: 13px;
+  --tvx-text-subheading: 22px;
+  --tvx-text-title: clamp(28px, 4vw, 40px); /* page title - the landing's heroline scale */
+  --tvx-text-metric: clamp(28px, 4vw, 44px);
+
+  /* --- Controls on the canvas: the active segment of the language toggle - navy on light, inverted on dark --- */
+  --tvx-toggle-active-bg: var(--tvx-brand);
+  --tvx-toggle-active-fg: #ffffff;
+
+  /* --- Layout --- */
+  --tvx-page-max-width: 1400px;
+  --tvx-page-gutter: 48px;
+  --tvx-header-height: 56px;
+  --tvx-r-pill: 9999px;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --tvx-canvas: #0e111c;
+  --tvx-paper: #161a2a;
+  --tvx-ink: #f2f3f7;
+  --tvx-ink-soft: #c3c7d4;
+  --tvx-ash: #7d8295;
+  --tvx-hairline: #2a3047;
+  --tvx-toggle-active-bg: #f2f3f7;
+  --tvx-toggle-active-fg: #0e111c;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --tvx-page-gutter: 16px;
+  }
+}
