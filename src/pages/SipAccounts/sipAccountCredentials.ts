@@ -3,11 +3,16 @@
 import type { SipAccountCredentials } from '@/api/types';
 import type { IssuedCredentialField } from '@/components/IssuedCredentialsModal/IssuedCredentialsModal';
 
-/** What goes into the device's SIP settings: number, domain and - when the server made it up - the password. */
+/**
+ * What goes into the device's SIP settings: the number (it is both the SIP username and the authentication
+ * username - the core refuses a registration whose auth name differs from the number), the domain (also the
+ * digest realm) and - when the server made it up - the password. Display name / caller id fields on the device
+ * are free: the core never reads the From header as an identity.
+ */
 export function sipCredentialFields(credentials: SipAccountCredentials): IssuedCredentialField[] {
   const fields: IssuedCredentialField[] = [
-    { label: 'Number (login)', value: credentials.account.username },
-    { label: 'SIP domain', value: credentials.realm },
+    { label: 'Number (username and authentication username)', value: credentials.account.username },
+    { label: 'SIP domain (also the realm / outbound proxy)', value: credentials.realm },
   ];
   if (credentials.generated_password) {
     fields.push({ label: 'Password', value: credentials.generated_password });

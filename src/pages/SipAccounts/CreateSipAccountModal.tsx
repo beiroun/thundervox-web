@@ -18,6 +18,12 @@ const generatedRangeHint: Record<SipAccountKind, string> = {
   CLIENT: 'The server picks the next free client number (1xxxxxxx).',
 };
 
+/** What the operator's backend knows the endpoint by - the key it asks the service API for this number with. */
+export const externalIdHint: Record<SipAccountKind, string> = {
+  PANEL: 'Device id in the operator backend - for Modus the panel\'s ip:port, which selects the video shown when it calls. Optional for a test number.',
+  CLIENT: 'Subscriber account (ЛС) in the operator backend - whom to wake with a push when this number is called. Optional for a test number.',
+};
+
 /**
  * New SIP number. The normal way is to let the server pick both the number and the password; typing either is
  * allowed for numbers that must match an existing device configuration.
@@ -26,6 +32,7 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
   const [createSipAccount, { isLoading, error, reset }] = useCreateSipAccountMutation();
   const [kind, setKind] = useState<SipAccountKind>('PANEL');
   const [name, setName] = useState('');
+  const [externalId, setExternalId] = useState('');
   const [numberTyped, setNumberTyped] = useState(false);
   const [number, setNumber] = useState('');
   const [passwordTyped, setPasswordTyped] = useState(false);
@@ -34,6 +41,7 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
   const close = () => {
     setKind('PANEL');
     setName('');
+    setExternalId('');
     setNumberTyped(false);
     setNumber('');
     setPasswordTyped(false);
@@ -48,6 +56,7 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
       const credentials = await createSipAccount({
         kind,
         name: name.trim(),
+        external_id: externalId.trim() === '' ? undefined : externalId.trim(),
         username: numberTyped ? number.trim() : undefined,
         password: passwordTyped ? password : undefined,
       }).unwrap();
@@ -73,12 +82,19 @@ export function CreateSipAccountModal({ opened, onClose, onCreated }: CreateSipA
           />
           <TextInput
             label="Name"
-            description="Any text, Russian or Latin - shown in the console and later as the caller name"
+            description="Any text, Russian or Latin - shown in the console and later as the caller name. A label, not a key."
             value={name}
             onChange={(event) => setName(event.currentTarget.value)}
             maxLength={128}
             required
             data-autofocus
+          />
+          <TextInput
+            label="External id"
+            description={externalIdHint[kind]}
+            value={externalId}
+            onChange={(event) => setExternalId(event.currentTarget.value)}
+            maxLength={128}
           />
 
           <Switch

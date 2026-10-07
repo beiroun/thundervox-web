@@ -18,11 +18,11 @@ calls are in progress. A single-page application served by nginx, talking to
 | Page | What it shows |
 |---|---|
 | Login | operator sign-in (JWT from the server) |
-| Dashboard | devices total / online, app clients, active calls, recent registrations |
-| Devices | intercom panels and other endpoints: label, site, SIP number, vendor, **registration status** (online, source address, expiry, user agent); create, edit, issue a password (shown once), block |
-| App clients | the same for mobile app accounts; manual creation for tests |
-| Sites | buildings / entrances / parking lots and their devices |
-| Active calls | live calls from the core: who calls whom, duration, terminate |
+| Dashboard | numbers total / online, panels, app clients, blocked |
+| SIP numbers | panels and app clients: number, name, **external id** (the endpoint's id in the operator's backend: a panel's device id, an app client's subscriber account - the key of the service API), kind, **registration status** (online, source address, user agent, last seen); create (number and password generated unless typed), edit name and external id, new password (shown once), block, delete |
+| Console users | readers, administrators and the environment-defined super administrator |
+| Audit | every change of numbers and users, by whom and when |
+| Later | sites, active calls (need the core's JSON-RPC) |
 
 ## Stack
 

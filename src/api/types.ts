@@ -88,7 +88,14 @@ export interface SipAccount {
   id: number;
   /** The number itself: what the device registers as and what a panel dials. */
   username: string;
+  /** Human label, never a key. */
   name: string;
+  /**
+   * The endpoint's id in the operator's own system - the key the service API finds the number by. Panel: the
+   * device id (Modus: "ip:port", which video to show when it calls); app client: the subscriber account (whom to
+   * wake with a push). null for test numbers made by hand.
+   */
+  external_id: string | null;
   kind: SipAccountKind;
   enabled: boolean;
   created_at: string;
@@ -100,10 +107,18 @@ export interface SipAccount {
 export interface CreateSipAccountRequest {
   kind: SipAccountKind;
   name: string;
+  /** Omitted: a test number without an id in the operator's system. */
+  external_id?: string;
   /** Omitted: the server generates the next number of the kind. */
   username?: string;
   /** Omitted: the server generates one and returns it once. */
   password?: string;
+}
+
+/** PUT /sip-accounts/{id}: name and external id; the number itself never changes. Empty external_id clears it. */
+export interface UpdateSipAccountDetailsRequest {
+  name: string;
+  external_id?: string | null;
 }
 
 export interface SipAccountCredentials {

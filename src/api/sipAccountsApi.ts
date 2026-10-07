@@ -8,6 +8,7 @@ import type {
   CreateSipAccountRequest,
   SipAccount,
   SipAccountCredentials,
+  UpdateSipAccountDetailsRequest,
 } from '@/api/types';
 
 /** SIP numbers of panels and app clients. Every change refetches the list, which also carries the online state. */
@@ -26,8 +27,8 @@ export const sipAccountsApi = createApi({
       transformResponse: (response: BaseApiResponse<SipAccountCredentials>) => unwrapEnvelope(response),
       invalidatesTags: ['SipAccount'],
     }),
-    renameSipAccount: builder.mutation<SipAccount, { id: number; name: string }>({
-      query: ({ id, name }) => ({ url: `/sip-accounts/${id}`, method: 'PUT', body: { name } }),
+    updateSipAccountDetails: builder.mutation<SipAccount, { id: number } & UpdateSipAccountDetailsRequest>({
+      query: ({ id, ...body }) => ({ url: `/sip-accounts/${id}`, method: 'PUT', body }),
       transformResponse: (response: BaseApiResponse<SipAccount>) => unwrapEnvelope(response),
       invalidatesTags: ['SipAccount'],
     }),
@@ -52,7 +53,7 @@ export const sipAccountsApi = createApi({
 export const {
   useListSipAccountsQuery,
   useCreateSipAccountMutation,
-  useRenameSipAccountMutation,
+  useUpdateSipAccountDetailsMutation,
   useRotateSipAccountPasswordMutation,
   useSetSipAccountBlockedMutation,
   useDeleteSipAccountMutation,

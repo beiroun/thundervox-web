@@ -35,7 +35,7 @@ import {
   type IssuedCredentialField,
 } from '@/components/IssuedCredentialsModal/IssuedCredentialsModal';
 import { CreateSipAccountModal } from '@/pages/SipAccounts/CreateSipAccountModal';
-import { RenameSipAccountModal } from '@/pages/SipAccounts/RenameSipAccountModal';
+import { EditSipAccountModal } from '@/pages/SipAccounts/EditSipAccountModal';
 import { RotateSipPasswordModal } from '@/pages/SipAccounts/RotateSipPasswordModal';
 import { SipAccountStatusBadge } from '@/pages/SipAccounts/SipAccountStatusBadge';
 import { sipCredentialFields } from '@/pages/SipAccounts/sipAccountCredentials';
@@ -49,7 +49,7 @@ const statusRefreshMs = 15_000;
 
 type OpenDialog =
   | { type: 'create' }
-  | { type: 'rename'; account: SipAccount }
+  | { type: 'edit'; account: SipAccount }
   | { type: 'password'; account: SipAccount }
   | { type: 'block'; account: SipAccount }
   | { type: 'delete'; account: SipAccount }
@@ -73,7 +73,10 @@ export function SipAccounts() {
     return (accounts ?? []).filter(
       (account) =>
         (kindFilter === 'ALL' || account.kind === kindFilter) &&
-        (query === '' || account.username.includes(query) || account.name.toLowerCase().includes(query)),
+        (query === '' ||
+          account.username.includes(query) ||
+          account.name.toLowerCase().includes(query) ||
+          (account.external_id ?? '').toLowerCase().includes(query)),
     );
   }, [accounts, kindFilter, search]);
 
@@ -126,7 +129,7 @@ export function SipAccounts() {
           ]}
         />
         <TextInput
-          placeholder="Number or name"
+          placeholder="Number, name or external id"
           leftSection={<IconSearch size={16} />}
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}
@@ -145,6 +148,7 @@ export function SipAccounts() {
             <Table.Tr>
               <Table.Th>Number</Table.Th>
               <Table.Th>Name</Table.Th>
+              <Table.Th>External id</Table.Th>
               <Table.Th>Kind</Table.Th>
               <Table.Th>Status</Table.Th>
               <Table.Th>Device</Table.Th>
@@ -154,7 +158,7 @@ export function SipAccounts() {
           <Table.Tbody>
             {visibleAccounts.length === 0 && (
               <Table.Tr>
-                <Table.Td colSpan={canChange ? 6 : 5}>
+                <Table.Td colSpan={canChange ? 7 : 6}>
                   <Text c="dimmed" size="sm">
                     {accounts.length === 0 ? 'No numbers yet.' : 'Nothing matches the filter.'}
                   </Text>
@@ -167,6 +171,15 @@ export function SipAccounts() {
                   <Code fz="sm">{account.username}</Code>
                 </Table.Td>
                 <Table.Td>{account.name}</Table.Td>
+                <Table.Td>
+                  {account.external_id ? (
+                    <Code fz="sm">{account.external_id}</Code>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      –
+                    </Text>
+                  )}
+                </Table.Td>
                 <Table.Td>
                   <Badge variant="outline" color={account.kind === 'PANEL' ? 'yellow' : 'cyan'}>
                     {kindTitles[account.kind]}
@@ -194,7 +207,7 @@ export function SipAccounts() {
                   <Table.Td>
                     <SipAccountActions
                       account={account}
-                      onRename={() => setDialog({ type: 'rename', account })}
+                      onEdit={() => setDialog({ type: 'edit', account })}
                       onRotatePassword={() => setDialog({ type: 'password', account })}
                       onBlock={() => setDialog({ type: 'block', account })}
                       onUnblock={() => void setBlocked({ id: account.id, blocked: false })}
@@ -213,7 +226,7 @@ export function SipAccounts() {
         onClose={closeDialog}
         onCreated={showIssued('Number created')}
       />
-      <RenameSipAccountModal account={dialog?.type === 'rename' ? dialog.account : null} onClose={closeDialog} />
+      <EditSipAccountModal account={dialog?.type === 'edit' ? dialog.account : null} onClose={closeDialog} />
       <RotateSipPasswordModal
         account={dialog?.type === 'password' ? dialog.account : null}
         onClose={closeDialog}
@@ -256,14 +269,14 @@ export function SipAccounts() {
 
 interface SipAccountActionsProps {
   account: SipAccount;
-  onRename: () => void;
+  onEdit: () => void;
   onRotatePassword: () => void;
   onBlock: () => void;
   onUnblock: () => void;
   onDelete: () => void;
 }
 
-function SipAccountActions({ account, onRename, onRotatePassword, onBlock, onUnblock, onDelete }: SipAccountActionsProps) {
+function SipAccountActions({ account, onEdit, onRotatePassword, onBlock, onUnblock, onDelete }: SipAccountActionsProps) {
   return (
     <Menu position="bottom-end" withinPortal>
       <Menu.Target>
@@ -272,8 +285,8 @@ function SipAccountActions({ account, onRename, onRotatePassword, onBlock, onUnb
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Item leftSection={<IconPencil size={16} />} onClick={onRename}>
-          Rename
+        <Menu.Item leftSection={<IconPencil size={16} />} onClick={onEdit}>
+          Edit name and external id
         </Menu.Item>
         <Menu.Item leftSection={<IconKey size={16} />} onClick={onRotatePassword}>
           New password
