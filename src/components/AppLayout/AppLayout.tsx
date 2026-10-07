@@ -50,8 +50,8 @@ export function AppLayout() {
       navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !mobileNavOpened } }}
       padding={0}
     >
-      {/* zIndex above the navbar's (Mantine gives the column 101 and the header 100): the band must stay on top
-          of the column's edge, or a fractional browser zoom lets the column eat the band's last pixel row */}
+      {/* zIndex above the navbar's (Mantine gives the column 101 and the header 100): the bar's hairline must run
+          over the column's edge too, or a fractional browser zoom lets the column eat the bar's last pixel row */}
       <AppShell.Header withBorder={false} className="tvx-topbar" zIndex={102}>
         <ConsoleHeader
           burger={
@@ -60,7 +60,7 @@ export function AppLayout() {
               onClick={() => setMobileNavOpened((opened) => !opened)}
               hiddenFrom="sm"
               size="sm"
-              color="var(--tvx-on-brand)"
+              color="var(--mantine-color-text)"
               aria-label={t.nav.menu}
             />
           }

@@ -4,15 +4,18 @@ import type { ReactNode } from 'react';
 
 import type { PageCopy } from '@/i18n/dict';
 
-/** Top of every page: the orange kicker, the title in the heroline scale and, on the right, the page's actions. */
+/**
+ * Top of every page: the orange kicker, then the title in the heroline scale with the page's actions on the
+ * same line (the "new …" button lives next to the title, not in a row of its own).
+ */
 export function PageHeader({ page, actions }: { page: PageCopy; actions?: ReactNode }) {
   return (
     <div className="tvx-page__head">
-      <div>
-        <div className="tvx-kicker">{page.kicker}</div>
+      <div className="tvx-kicker">{page.kicker}</div>
+      <div className="tvx-page__title-row">
         <h1 className="tvx-title">{page.title}</h1>
+        {actions}
       </div>
-      {actions}
     </div>
   );
 }
