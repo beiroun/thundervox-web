@@ -27,13 +27,11 @@ body {
   margin: 0 auto;
 }
 
-/* --- Top bar: the console's own header on the canvas, one hairline frame together with the side column.
-   The brand lives in the mark (navy disc, orange ring) and the small wordmark, not in a full-bleed band - the
-   landing's colour is rationed here the way its body rations it. --- */
+/* --- Top bar: the landing's navy band, full width above the side column, in the console's own composition
+   (mark + small wordmark at the left edge, the switches right after). Navy in both schemes, like the landing. --- */
 .tvx-topbar {
-  background: var(--mantine-color-body);
-  border-bottom: 1px solid var(--tvx-hairline);
-  color: var(--mantine-color-text);
+  background: var(--tvx-brand);
+  color: var(--tvx-on-brand);
 }
 
 /* Full width, everything gathered at the left edge: the mark sits above the column, the switches follow it.
@@ -58,7 +56,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--mantine-color-text);
+  color: var(--tvx-on-brand);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -81,7 +79,7 @@ body {
 .tvx-byline {
   font-size: var(--tvx-text-caption);
   letter-spacing: 0;
-  color: var(--tvx-ash);
+  opacity: 0.7;
   padding-top: 3px;
 }
 
@@ -92,24 +90,25 @@ body {
   flex-shrink: 0;
 }
 
-/* Icon buttons in the top bar (theme, burger): ink, a hairline-coloured fill on hover */
+/* Icon buttons on the band (theme): white, a faint fill on hover */
 .tvx-topbar-iconbtn {
-  color: var(--tvx-ink-soft);
-  transition: color 0.15s ease, background-color 0.15s ease;
+  color: var(--tvx-on-brand);
+  opacity: 0.85;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
 }
 
 .tvx-topbar-iconbtn:hover {
-  color: var(--mantine-color-text);
-  background: var(--mantine-color-default-hover);
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* --- Language toggle: a pill in the chrome's own colours; the active segment carries the navy --- */
+/* --- Language toggle: the landing's pill - white outline, the active segment inverted to white --- */
 .tvx-langtoggle {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   padding: 3px;
-  border: 1px solid var(--tvx-hairline);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: var(--tvx-r-pill);
 }
 
@@ -122,18 +121,20 @@ body {
   font-size: var(--tvx-text-caption);
   line-height: 1;
   letter-spacing: 0;
-  color: var(--tvx-ink-soft);
+  color: var(--tvx-on-brand);
+  opacity: 0.7;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
 .tvx-langtoggle button:hover {
-  color: var(--mantine-color-text);
+  opacity: 1;
 }
 
 .tvx-langtoggle button.is-active {
-  background: var(--tvx-toggle-active-bg);
-  color: var(--tvx-toggle-active-fg);
+  background: var(--tvx-on-brand);
+  color: var(--tvx-brand);
+  opacity: 1;
 }
 
 /* --- Side column: the primary navigation, the operator at its foot; a drawer under the band on a phone --- */
