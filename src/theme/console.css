@@ -37,7 +37,7 @@ body {
   color: var(--mantine-color-text);
 }
 
-/* Full width, everything gathered at the left edge: the mark sits above the column, the switches follow it.
+/* Full width: the mark at the left edge above the column, the operator and the switches at the right edge.
    24px matches the column's own padding, so the mark and the active dot share one left edge. */
 .tvx-header {
   display: flex;
@@ -90,7 +90,24 @@ body {
   display: flex;
   align-items: center;
   gap: var(--mantine-spacing-sm);
+  margin-left: auto;
   flex-shrink: 0;
+}
+
+/* The operator after the switches, the log-out last at the edge; the login is cut with an ellipsis, never the badge */
+.tvx-header__operator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.tvx-header__operator-login {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Icon buttons in the top bar (theme): ink, a hairline-coloured fill on hover */
@@ -137,7 +154,8 @@ body {
   color: var(--tvx-toggle-active-fg);
 }
 
-/* --- Side column: the primary navigation, the operator at its foot; a drawer under the band on a phone --- */
+/* --- Side column: the primary navigation, the versions and the maker at its foot; a drawer under the top bar
+   on a phone --- */
 .tvx-sidenav {
   display: flex;
   flex-direction: column;
@@ -184,24 +202,6 @@ body {
   margin-top: -2px;
   border-radius: 50%;
   background: var(--tvx-accent);
-}
-
-/* The operator: login, role, log out - under the links, above the column's bottom edge */
-.tvx-sidenav__user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-top: 16px;
-  border-top: 1px solid var(--tvx-hairline);
-  font-size: var(--tvx-text-nav);
-}
-
-.tvx-sidenav__user-login {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* --- Page --- */
@@ -341,11 +341,12 @@ body {
   border-color: var(--tvx-accent);
 }
 
-/* --- Footer: one hairline, one muted line --- */
+/* --- Footer: the versions, the website, the copyright. One muted row under a hairline on the login page;
+   stacked at the foot of the side column, under the hairline that closes the navigation. --- */
 .tvx-footer {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  align-items: baseline;
   gap: 8px var(--mantine-spacing-lg);
   padding: 24px 0 32px;
   border-top: 1px solid var(--tvx-hairline);
@@ -355,6 +356,23 @@ body {
 
 .tvx-footer a {
   border-bottom-color: transparent;
+}
+
+/* In the row the two versions stay left, the website and the copyright go right */
+.tvx-footer__site {
+  margin-left: auto;
+}
+
+.tvx-footer--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 0 0;
+  font-size: var(--tvx-text-caption);
+}
+
+.tvx-footer--stacked .tvx-footer__site {
+  margin-left: 0;
 }
 
 /* --- Login: the band without navigation, the form as a flat card on the canvas --- */
@@ -396,6 +414,15 @@ body {
     padding: 0 16px;
   }
 
+  /* 390px holds the mark, the log-out and the two switches, not the operator's name and role as well */
+  .tvx-header__operator {
+    display: none;
+  }
+
+  .tvx-header__actions {
+    gap: 8px;
+  }
+
   /* The column becomes a full-width drawer under the top bar */
   .tvx-sidenav {
     padding: 8px 16px 16px;
@@ -428,5 +455,12 @@ body {
 
   .tvx-login__card {
     padding: 24px;
+  }
+}
+
+/* 360px: the mark alone carries the brand; with the wordmark the log-out ran over its last letters */
+@media (max-width: 380px) {
+  .tvx-wordmark {
+    display: none;
   }
 }

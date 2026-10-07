@@ -33,10 +33,11 @@ the Slate navy (`#212842`) and the warm orange (`#dd5410`) of the brand, an
 achromatic editorial body where the only divider is a hairline, weight 400
 everywhere, radius pill or none, no shadows. The console applies it as an
 admin, not as a copy of the landing: the top bar sits on the canvas under a
-hairline with the mark (navy disc, orange ring, bolt), the small wordmark
-"ThunderVox by 84softworks" and the language / theme switches; the primary
+hairline with the mark (navy disc, orange ring, bolt) and the small wordmark
+"ThunderVox by 84softworks" at the left, the operator (login, role badge),
+the log-out and the language / theme switches at the right; the primary
 navigation is the left column (a drawer under the bar on a phone) with the
-operator - login, role badge, log out - at its foot; orange marks the active
+running versions, the website and the copyright at its foot; orange marks the active
 page, kickers, metric numbers and primary buttons; navy stays in the mark, the
 administrator badge and the active language segment. Fonts are self-hosted (`public/fonts`): **Onest** (Latin +
 Cyrillic) for everything, **Clash Display** for the wordmark only.
@@ -84,7 +85,8 @@ api/          RTK Query: baseQuery (bearer from the auth slice, envelope unwrapp
 store/        Redux Toolkit: AuthSlice, RootReducer, store + typed hooks
 routes/       routes.tsx — createBrowserRouter, created once outside the React tree (React Router 8)
 pages/        one folder per page (Login, Dashboard, SipAccounts, ConsoleUsers, Audit, About, NotFound)
-components/   AppLayout (band, side column with the operator at its foot, footer), ConsoleHeader, ConsoleFooter, PageHeader,
+components/   AppLayout (top bar, side column with the versions at its foot), ConsoleHeader (mark, operator, switches),
+              ConsoleFooter (versions + maker: column foot, login page), PageHeader,
               LanguageToggle, ColorSchemeToggle, RoleBadge (+ legend), modals
 i18n/         dict.ts (EN + RU copy, one type), LangContext.tsx (locale detection, persistence, <html lang>)
 shared/       navigation.ts (paths, band entries), consoleRoles.ts (abbreviations, colours, permissions),
@@ -153,7 +155,7 @@ build argument, not a runtime variable.
 
 Image: `docker build -t thundervox-web:dev .` — `node:24-trixie-slim` builds,
 `nginx:1.30-trixie` serves; the build arg `APP_VERSION` (the git tag in CI)
-is shown in the footer and on the About page as the console version.
+is shown at the foot of the side column and on the About page as the console version.
 
 ## License
 
