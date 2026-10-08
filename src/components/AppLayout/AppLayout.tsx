@@ -58,7 +58,7 @@ export function AppLayout() {
               onClick={() => setMobileNavOpened((opened) => !opened)}
               hiddenFrom="sm"
               size="sm"
-              color="var(--mantine-color-text)"
+              color="var(--tvx-topbar-fg)"
               aria-label={t.nav.menu}
             />
           }
