@@ -44,17 +44,21 @@
   --tvx-text-title: clamp(28px, 4vw, 40px); /* page title - the landing's heroline scale */
   --tvx-text-metric: clamp(28px, 4vw, 44px);
 
-  /* --- Top bar: the landing's navy band - white text, the landing's own alphas for muted text, outlines and
-     hover fills on navy; no hairline under it, the band's edge is the navy itself --- */
-  --tvx-topbar-bg: var(--tvx-brand);
-  --tvx-topbar-fg: var(--tvx-on-brand);
+  /* --- Top bar: the landing's navy band, the same in both schemes (Andrei, 2026-10-08: changing the bar's colour
+     with the theme makes little sense). A step lighter than the dark canvas, in the proportion he measured on the
+     landing's header against its band (Digital Color Meter 0.118/0.142/0.250 over 0.123/0.141/0.223) - the
+     landing gets it from glass over the animation, the console takes it as a plain fill. White text, the
+     landing's own alphas for muted text, outlines and hover fills on navy; no hairline under the band, the step
+     itself is its edge. --- */
+  --tvx-topbar-bg: #20284a;
+  --tvx-topbar-fg: #ffffff;
   --tvx-topbar-fg-soft: rgba(255, 255, 255, 0.85);
   --tvx-topbar-muted: rgba(255, 255, 255, 0.55);
-  --tvx-topbar-line: var(--tvx-brand);
+  --tvx-topbar-line: var(--tvx-topbar-bg);
   --tvx-topbar-control-border: rgba(255, 255, 255, 0.25);
   --tvx-topbar-hover: rgba(255, 255, 255, 0.1);
   /* The active segment of the language toggle inverts to white with navy text, as the landing's does */
-  --tvx-toggle-active-bg: var(--tvx-on-brand);
+  --tvx-toggle-active-bg: #ffffff;
   --tvx-toggle-active-fg: var(--tvx-brand);
 
   /* --- Layout --- */
@@ -76,18 +80,6 @@
   --tvx-accent-ink: var(--mantine-color-accent-4); /* accentDark.text of the theme - orange that reads on navy */
   --tvx-field: var(--tvx-canvas); /* a field is sunken to the canvas, so it shows on paper (modals) as well */
   --tvx-chip: rgba(255, 255, 255, 0.08); /* a chip lifts off canvas and paper alike */
-  /* The bar is a band a step lighter than the canvas, solid (Andrei, 2026-10-08: the landing's header only looks
-     lighter because it is glass over the animation; the console takes the lighter navy as a plain fill). No
-     hairline under it - the step itself is the edge; the controls keep the landing's white alphas. */
-  --tvx-topbar-bg: #2d3759;
-  --tvx-topbar-fg: var(--tvx-ink);
-  --tvx-topbar-fg-soft: rgba(255, 255, 255, 0.85);
-  --tvx-topbar-muted: rgba(255, 255, 255, 0.55);
-  --tvx-topbar-line: #2d3759;
-  --tvx-topbar-control-border: rgba(255, 255, 255, 0.25);
-  --tvx-topbar-hover: rgba(255, 255, 255, 0.1);
-  --tvx-toggle-active-bg: #f2f3f7;
-  --tvx-toggle-active-fg: var(--tvx-brand);
 }
 
 @media (max-width: 760px) {
