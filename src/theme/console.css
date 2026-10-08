@@ -27,11 +27,11 @@ body {
   margin: 0 auto;
 }
 
-/* --- Top bar: the landing's navy band in the light scheme (Andrei, 2026-10-08: try the header in the landing's
-   colour), full width above the side column, in the console's own composition - the mark and the small wordmark at
-   the left edge, the switches and the operator at the right. In the dark scheme the canvas is that navy already,
-   so the bar sits on it under a hairline: one navy band in both schemes. Every colour of the bar is a
-   --tvx-topbar-* token (tokens.css), the structure below knows no scheme. --- */
+/* --- Top bar: the console's own header on the canvas, full width above the side column, one hairline frame
+   together with it. The brand lives in the mark (navy disc, orange ring) and the small wordmark, not in a
+   full-bleed band: the landing's navy band was tried here three times and sent back each time (last 2026-10-08) -
+   the landing's colour is rationed here the way its body rations it. Every colour of the bar is a --tvx-topbar-*
+   token (tokens.css); the structure below knows no scheme. --- */
 .tvx-topbar {
   background: var(--tvx-topbar-bg);
   border-bottom: 1px solid var(--tvx-topbar-line);
@@ -55,9 +55,7 @@ body {
   min-width: 0;
 }
 
-/* Mark + wordmark + byline: the product name in the display face, "by 84softworks" in the body face next to it.
-   On the band the mark's navy disc merges with it and the orange ring and bolt carry the sign - as the favicon
-   does on the landing's own band. */
+/* Mark + wordmark + byline: the product name in the display face, "by 84softworks" in the body face next to it */
 .tvx-brandmark {
   display: inline-flex;
   align-items: center;
@@ -124,7 +122,7 @@ body {
   background: var(--tvx-topbar-hover);
 }
 
-/* --- Language toggle: the landing's pill - an outline in the bar's colours, the active segment inverted --- */
+/* --- Language toggle: a pill in the bar's colours; the active segment carries the navy (inverted on dark) --- */
 .tvx-langtoggle {
   display: inline-flex;
   align-items: center;
