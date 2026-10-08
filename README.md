@@ -22,6 +22,7 @@ audit trail. A single-page application served by nginx, talking to
 | SIP numbers | panels and subscribers (kind `CLIENT` of the API): number, name, **external id** (the endpoint's id in the operator's backend: a panel's device id, an app client's subscriber account - the key of the service API), kind, **registration status** (online, source address, user agent, last seen); create (number and password generated unless typed), edit name and external id, new password (shown once), block, delete |
 | Console users | readers, administrators and the environment-defined super administrator; roles as colour-coded abbreviations **SA / ADM / RD** with a legend |
 | Audit | every change of numbers and users, by whom and when |
+| Integration | the whole seam with the operator's backend: named **service API tokens** (issued once, hashed on the server, revocable), ready-made **endpoint links** with the public API address, the **wake push** gateway (URL, auth header, timeouts, a test push with the real contract body), and the **delivery log** of every push. Administrators read and test; the super administrator changes |
 | About | what the console is, running versions, legal: product, author and licensor, website, source, contact, license terms |
 | Later | sites, active calls (need the core's JSON-RPC) |
 

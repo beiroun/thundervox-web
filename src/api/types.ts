@@ -147,3 +147,110 @@ export interface AuditPage {
   page: number;
   size: number;
 }
+
+// ---- Integration ----
+
+/** A named token of the service API; the value exists only in the response that issued it. */
+export interface ServiceToken {
+  id: number;
+  name: string;
+  /** First characters of the value, to recognise it in a config file. */
+  token_prefix: string;
+  enabled: boolean;
+  created_by: string;
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+}
+
+/** POST /integration/tokens */
+export interface IssueServiceTokenRequest {
+  name: string;
+}
+
+export interface IssuedServiceToken {
+  token: ServiceToken;
+  /** Shown once; the server keeps only its hash. */
+  value: string;
+}
+
+/** Where the wake push goes; the header value is write-only. */
+export interface PushSettings {
+  enabled: boolean;
+  url: string;
+  auth_header_name: string;
+  auth_header_value_set: boolean;
+  /** Last characters of the stored value, or null. */
+  auth_header_value_hint: string | null;
+  connect_timeout_ms: number;
+  read_timeout_ms: number;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+/** PUT /integration/push: auth_header_value absent = keep the stored secret, empty string = clear it. */
+export interface UpdatePushSettingsRequest {
+  enabled: boolean;
+  url: string;
+  auth_header_name: string;
+  auth_header_value?: string;
+  connect_timeout_ms: number;
+  read_timeout_ms: number;
+}
+
+/** GET /integration */
+export interface IntegrationOverview {
+  /** Address the operator's backend reaches the server at; empty when the deployment did not say. */
+  api_base_url: string;
+  sip_domain: string;
+  push: PushSettings;
+}
+
+export type PushDeliveryKind = 'LIVE' | 'TEST';
+
+export type PushDeliveryOutcome = 'DELIVERED' | 'REJECTED' | 'FAILED' | 'SKIPPED';
+
+/** POST /integration/push/test */
+export interface PushTestRequest {
+  caller_username: string;
+  callee_username: string;
+}
+
+export interface PushTestResult {
+  call_id: string;
+  url: string;
+  outcome: PushDeliveryOutcome;
+  http_status: number | null;
+  attempts: number;
+  duration_ms: number;
+  response_excerpt: string | null;
+  error: string | null;
+  /** The JSON that was sent: the contract filled in with real values. */
+  sent_body: string;
+}
+
+export interface PushDelivery {
+  id: number;
+  created_at: string;
+  call_id: string;
+  sip_call_id: string | null;
+  kind: PushDeliveryKind;
+  caller_number: string | null;
+  caller_external_id: string | null;
+  callee_number: string | null;
+  callee_external_id: string | null;
+  url: string | null;
+  outcome: PushDeliveryOutcome;
+  http_status: number | null;
+  attempts: number;
+  duration_ms: number | null;
+  response_excerpt: string | null;
+  error: string | null;
+}
+
+export interface PushDeliveryPage {
+  items: PushDelivery[];
+  total: number;
+  page: number;
+  size: number;
+}

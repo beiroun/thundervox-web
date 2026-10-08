@@ -16,6 +16,8 @@ interface IssuedCredentialsModalProps {
   title: string;
   /** True when a generated password is among the fields: it is shown here once and never again. */
   containsGeneratedPassword: boolean;
+  /** Replaces the password warning for other one-time secrets (a service token). */
+  warning?: string;
   onClose: () => void;
 }
 
@@ -23,15 +25,15 @@ interface IssuedCredentialsModalProps {
  * Shows credentials right after the server issued them. A generated password exists nowhere else - the server
  * keeps only its hash - so the window says so and offers a copy button for every value.
  */
-export function IssuedCredentialsModal({ fields, title, containsGeneratedPassword, onClose }: IssuedCredentialsModalProps) {
+export function IssuedCredentialsModal({ fields, title, containsGeneratedPassword, warning, onClose }: IssuedCredentialsModalProps) {
   const { t } = useLang();
 
   return (
     <Modal opened={fields !== null} onClose={onClose} title={title} closeOnClickOutside={false}>
       <Stack gap="md">
-        {containsGeneratedPassword && (
+        {(containsGeneratedPassword || warning) && (
           <Alert color="accent" icon={<IconKey size={18} />}>
-            {t.credentialsModal.generatedPasswordWarning}
+            {warning ?? t.credentialsModal.generatedPasswordWarning}
           </Alert>
         )}
         {fields?.map((field) => (

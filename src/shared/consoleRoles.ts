@@ -44,3 +44,13 @@ export function manageableRoles(role: ConsoleRole): ConsoleRole[] {
 export function mayManageConsoleUsers(role: ConsoleRole): boolean {
   return manageableRoles(role).length > 0;
 }
+
+/** The Integration page: administrators read it and send test pushes, readers never see it. */
+export function mayViewIntegration(role: ConsoleRole): boolean {
+  return role !== 'READER';
+}
+
+/** Issuing and revoking service tokens, changing the push settings. */
+export function mayChangeIntegration(role: ConsoleRole): boolean {
+  return role === 'SUPER_ADMINISTRATOR';
+}

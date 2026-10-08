@@ -20,13 +20,21 @@ import type {
   ConsoleUserCredentials,
   CreateConsoleUserRequest,
   CreateSipAccountRequest,
+  IntegrationOverview,
+  IssuedServiceToken,
   LoginRequest,
   LoginResponse,
   PlatformInfo,
+  PushDelivery,
+  PushDeliveryPage,
+  PushSettings,
+  PushTestResult,
+  ServiceToken,
   SipAccount,
   SipAccountCredentials,
   SipAccountKind,
   UpdateConsoleUserRequest,
+  UpdatePushSettingsRequest,
   UpdateSipAccountDetailsRequest,
 } from '../src/api/types.ts';
 
@@ -54,15 +62,25 @@ interface MockConsoleUser extends ConsoleUser {
   password: string;
 }
 
+interface MockPushSettings extends PushSettings {
+  /** The secret itself, which the real server stores and never returns. */
+  auth_header_value: string | null;
+}
+
 interface MockState {
   users: MockConsoleUser[];
   accounts: SipAccount[];
   audit: AuditEntry[];
+  tokens: ServiceToken[];
+  push: MockPushSettings;
+  deliveries: PushDelivery[];
   /** Bearer token -> login; dropped on password reset, as the real server invalidates the tokens. */
   sessions: Map<string, string>;
   nextUserId: number;
   nextAccountId: number;
   nextAuditId: number;
+  nextTokenId: number;
+  nextDeliveryId: number;
 }
 
 // ---- Time and tokens ----
@@ -238,7 +256,99 @@ function createState(): MockState {
     entry(10, minutesAgo(4 * 60), 'ADMIN', 'admin', 'CONSOLE_USER_UPDATED', 'CONSOLE_USER', 4, { login: 'night.shift', enabled: false }),
   ];
 
-  return { users, accounts, audit, sessions: new Map(), nextUserId: 5, nextAccountId: 6, nextAuditId: 11 };
+  const tokens: ServiceToken[] = [
+    {
+      id: 1,
+      name: 'modus tv-sip',
+      token_prefix: 'tvx_3kQ9mZpa',
+      enabled: true,
+      created_by: 'admin',
+      created_at: minutesAgo(24 * 60 + 30),
+      last_used_at: minutesAgo(3),
+      revoked_at: null,
+    },
+    {
+      id: 2,
+      name: 'integrator laptop',
+      token_prefix: 'tvx_H7wLs0Qe',
+      enabled: false,
+      created_by: 'admin',
+      created_at: minutesAgo(2 * 24 * 60),
+      last_used_at: minutesAgo(26 * 60),
+      revoked_at: minutesAgo(25 * 60),
+    },
+  ];
+
+  const push: MockPushSettings = {
+    enabled: true,
+    url: 'https://testapi.modus-omsk.ru:8081/api/tv-sip/test',
+    auth_header_name: 'X-SERVICE-TOKEN',
+    auth_header_value: 'mock-secret-value-0123',
+    auth_header_value_set: true,
+    auth_header_value_hint: '0123',
+    connect_timeout_ms: 2000,
+    read_timeout_ms: 3000,
+    updated_at: minutesAgo(24 * 60),
+    updated_by: 'admin',
+  };
+
+  const deliveries: PushDelivery[] = [
+    delivery(1, minutesAgo(50), 'LIVE', '20000001', '178.74.67.30:5060', '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 142, '{"call_id":"…","caller_id":"178.74.67.30:5060","callee_id":"0001234567"}', null),
+    delivery(2, minutesAgo(35), 'LIVE', '20000002', '178.74.67.31:5060', '10000002', '0001234568', push.url, 'FAILED', null, 2, 4012, null, 'I/O error on POST request: connect timed out'),
+    delivery(3, minutesAgo(20), 'TEST', '20000001', '178.74.67.30:5060', '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 98, '{"call_id":"…"}', null),
+    delivery(4, minutesAgo(8), 'LIVE', '20000003', null, '10000002', '0001234568', push.url, 'REJECTED', 400, 1, 77, '{"message":"caller_id must not be blank"}', null),
+  ];
+
+  return {
+    users,
+    accounts,
+    audit,
+    tokens,
+    push,
+    deliveries,
+    sessions: new Map(),
+    nextUserId: 5,
+    nextAccountId: 6,
+    nextAuditId: 11,
+    nextTokenId: 3,
+    nextDeliveryId: 5,
+  };
+}
+
+function delivery(
+  id: number,
+  createdAt: string,
+  kind: PushDelivery['kind'],
+  callerNumber: string | null,
+  callerExternalId: string | null,
+  calleeNumber: string | null,
+  calleeExternalId: string | null,
+  url: string,
+  outcome: PushDelivery['outcome'],
+  httpStatus: number | null,
+  attempts: number,
+  durationMs: number,
+  responseExcerpt: string | null,
+  error: string | null,
+): PushDelivery {
+  return {
+    id,
+    created_at: createdAt,
+    call_id: crypto.randomUUID(),
+    sip_call_id: `${Math.random().toString(16).slice(2)}@178.74.67.30`,
+    kind,
+    caller_number: callerNumber,
+    caller_external_id: callerExternalId,
+    callee_number: calleeNumber,
+    callee_external_id: calleeExternalId,
+    url,
+    outcome,
+    http_status: httpStatus,
+    attempts,
+    duration_ms: durationMs,
+    response_excerpt: responseExcerpt,
+    error,
+  };
 }
 
 function entry(
@@ -276,6 +386,31 @@ function requireAdministrator(actor: ConsoleUser): void {
   if (actor.role === 'READER') {
     throw new ApiFailure(insufficientPrivilegesStatus, `${actor.login} (READER) may not change anything`, 'Недостаточно прав для этого действия');
   }
+}
+
+function requireSuperAdministrator(actor: ConsoleUser): void {
+  if (actor.role !== 'SUPER_ADMINISTRATOR') {
+    throw new ApiFailure(insufficientPrivilegesStatus, `${actor.login} (${actor.role}) may not manage service tokens or push settings`, 'Только суперадминистратор управляет токенами и настройками пуша');
+  }
+}
+
+/** The service token shape of the real server: a fixed prefix and 40 random characters. */
+function generateServiceToken(): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let value = 'tvx_';
+  for (let index = 0; index < 40; index += 1) {
+    value += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return value;
+}
+
+function publicPushSettings(push: MockPushSettings): PushSettings {
+  const { auth_header_value, ...settings } = push;
+  return {
+    ...settings,
+    auth_header_value_set: Boolean(auth_header_value),
+    auth_header_value_hint: auth_header_value && auth_header_value.length > 4 ? auth_header_value.slice(-4) : null,
+  };
 }
 
 function requireValidName(name: unknown): string {
@@ -590,6 +725,172 @@ const routes: Route[] = [
       dropSessionsOf(state, user.login);
       record(state, actor, 'CONSOLE_USER_PASSWORD_RESET', 'CONSOLE_USER', user.id, { login: user.login });
       return { user: publicUser(user), generated_password: generatedPassword };
+    },
+  },
+
+  // ---- Integration ----
+  {
+    method: 'GET',
+    pattern: /^\/integration$/,
+    handle: ({ state, actor }): IntegrationOverview => {
+      requireAdministrator(actor);
+      return { api_base_url: 'https://server.thundervox.ru/api/v1', sip_domain: realm, push: publicPushSettings(state.push) };
+    },
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/integration\/push$/,
+    handle: ({ state, actor, body }): PushSettings => {
+      requireSuperAdministrator(actor);
+      const request = body as Partial<UpdatePushSettingsRequest>;
+      const url = String(request.url ?? '').trim();
+      if (url !== '' && !/^https?:\/\/[^\s/]+/i.test(url)) {
+        throw new ApiFailure(wrongInputStatus, `Push URL '${url}' is not an absolute http(s) URL`, 'Адрес пуша: полный URL, начинающийся с http:// или https://');
+      }
+      const headerName = String(request.auth_header_name ?? '').trim();
+      if (!/^[A-Za-z0-9-]{1,64}$/.test(headerName)) {
+        throw new ApiFailure(wrongInputStatus, `Push auth header name '${headerName}' is invalid`, "Имя заголовка: латинские буквы, цифры и '-', до 64 символов");
+      }
+      const secretChange = typeof request.auth_header_value !== 'string' ? 'unchanged' : request.auth_header_value === '' ? 'cleared' : 'set';
+      state.push = {
+        ...state.push,
+        enabled: Boolean(request.enabled),
+        url,
+        auth_header_name: headerName,
+        auth_header_value: secretChange === 'unchanged' ? state.push.auth_header_value : secretChange === 'cleared' ? null : String(request.auth_header_value),
+        connect_timeout_ms: Number(request.connect_timeout_ms ?? 2000),
+        read_timeout_ms: Number(request.read_timeout_ms ?? 3000),
+        updated_at: serverTime(),
+        updated_by: actor.login,
+      };
+      record(state, actor, 'PUSH_SETTINGS_UPDATED', 'PUSH_SETTINGS', 1, { enabled: state.push.enabled, url, auth_header_name: headerName, auth_header_value: secretChange });
+      return publicPushSettings(state.push);
+    },
+  },
+  {
+    method: 'POST',
+    pattern: /^\/integration\/push\/test$/,
+    handle: ({ state, actor, body }): PushTestResult => {
+      requireAdministrator(actor);
+      const caller = state.accounts.find((account) => account.username === String(body.caller_username ?? ''));
+      const callee = state.accounts.find((account) => account.username === String(body.callee_username ?? ''));
+      if (!caller || !callee) {
+        throw new ApiFailure(notFoundStatus, 'SIP number not found', 'Номер не найден');
+      }
+      if (state.push.url === '') {
+        throw new ApiFailure(wrongInputStatus, 'Test push without a URL', 'Сначала задайте адрес пуша');
+      }
+      const callId = crypto.randomUUID();
+      const sentBody = {
+        call_id: callId,
+        sip_call_id: `test-${Date.now()}`,
+        caller_id: caller.external_id,
+        caller_number: caller.username,
+        caller_name: caller.name,
+        callee_id: callee.external_id,
+        callee_number: callee.username,
+        callee_name: callee.name,
+        sip_domain: realm,
+        occurred_at: new Date().toISOString(),
+      };
+      // The mock operator backend: a URL with "fail" in it is unreachable, a missing callee id is rejected
+      const unreachable = state.push.url.includes('fail');
+      const rejected = !unreachable && callee.external_id === null;
+      const result: PushTestResult = {
+        call_id: callId,
+        url: state.push.url,
+        outcome: unreachable ? 'FAILED' : rejected ? 'REJECTED' : 'DELIVERED',
+        http_status: unreachable ? null : rejected ? 400 : 200,
+        attempts: unreachable ? 2 : 1,
+        duration_ms: unreachable ? 4000 : 90 + Math.floor(Math.random() * 60),
+        response_excerpt: unreachable ? null : rejected ? '{"message":"callee_id must not be blank"}' : JSON.stringify({ call_id: callId, caller_id: caller.external_id, callee_id: callee.external_id }),
+        error: unreachable ? 'I/O error on POST request: connect timed out' : null,
+        sent_body: JSON.stringify(sentBody),
+      };
+      state.deliveries.push({
+        id: state.nextDeliveryId++,
+        created_at: serverTime(),
+        call_id: callId,
+        sip_call_id: sentBody.sip_call_id,
+        kind: 'TEST',
+        caller_number: caller.username,
+        caller_external_id: caller.external_id,
+        callee_number: callee.username,
+        callee_external_id: callee.external_id,
+        url: state.push.url,
+        outcome: result.outcome,
+        http_status: result.http_status,
+        attempts: result.attempts,
+        duration_ms: result.duration_ms,
+        response_excerpt: result.response_excerpt,
+        error: result.error,
+      });
+      record(state, actor, 'PUSH_TEST_SENT', 'PUSH_SETTINGS', 1, { url: state.push.url, call_id: callId, outcome: result.outcome, http_status: result.http_status });
+      return result;
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/integration\/push\/deliveries$/,
+    handle: ({ state, actor, query }): PushDeliveryPage => {
+      requireAdministrator(actor);
+      const page = Math.max(0, Number(query.get('page') ?? 0));
+      const size = Math.min(200, Math.max(1, Number(query.get('size') ?? 50)));
+      const newestFirst = [...state.deliveries].reverse();
+      return { items: newestFirst.slice(page * size, page * size + size), total: newestFirst.length, page, size };
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/integration\/tokens$/,
+    handle: ({ state, actor }): ServiceToken[] => {
+      requireAdministrator(actor);
+      return [...state.tokens].reverse();
+    },
+  },
+  {
+    method: 'POST',
+    pattern: /^\/integration\/tokens$/,
+    handle: ({ state, actor, body }): IssuedServiceToken => {
+      requireSuperAdministrator(actor);
+      const name = String(body.name ?? '').trim();
+      if (name.length < 2 || name.length > 48) {
+        throw new ApiFailure(wrongInputStatus, `Service token name '${name}' is invalid`, 'Название токена: от 2 до 48 символов');
+      }
+      if (state.tokens.some((token) => token.enabled && token.name === name)) {
+        throw new ApiFailure(wrongInputStatus, `Service token name '${name}' is taken`, `Токен с названием «${name}» уже есть`);
+      }
+      const value = generateServiceToken();
+      const token: ServiceToken = {
+        id: state.nextTokenId++,
+        name,
+        token_prefix: value.slice(0, 12),
+        enabled: true,
+        created_by: actor.login,
+        created_at: serverTime(),
+        last_used_at: null,
+        revoked_at: null,
+      };
+      state.tokens.push(token);
+      record(state, actor, 'SERVICE_TOKEN_CREATED', 'SERVICE_TOKEN', token.id, { name, token_prefix: token.token_prefix });
+      return { token, value };
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/integration\/tokens\/(\d+)$/,
+    handle: ({ state, actor, params }): ServiceToken => {
+      requireSuperAdministrator(actor);
+      const token = state.tokens.find((candidate) => candidate.id === Number(params[0]));
+      if (!token) {
+        throw new ApiFailure(notFoundStatus, `Service token ${params[0]} not found`, 'Токен не найден');
+      }
+      if (token.enabled) {
+        token.enabled = false;
+        token.revoked_at = serverTime();
+        record(state, actor, 'SERVICE_TOKEN_REVOKED', 'SERVICE_TOKEN', token.id, { name: token.name, token_prefix: token.token_prefix });
+      }
+      return token;
     },
   },
 

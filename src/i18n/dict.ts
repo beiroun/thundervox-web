@@ -3,7 +3,7 @@
 //
 // Console copy in English and Russian - the single source of every display string. Language-invariant tokens
 // (the wordmark, role abbreviations, numbers, hosts, e-mail) live in the components.
-import type { ConsoleRole, SipAccountKind } from '@/api/types';
+import type { ConsoleRole, PushDeliveryKind, PushDeliveryOutcome, SipAccountKind } from '@/api/types';
 
 export type Lang = 'en' | 'ru';
 
@@ -24,6 +24,7 @@ export interface Copy {
     sipAccounts: string;
     consoleUsers: string;
     audit: string;
+    integration: string;
     about: string;
     menu: string;
   };
@@ -33,6 +34,7 @@ export interface Copy {
     sipAccounts: PageCopy;
     consoleUsers: PageCopy;
     audit: PageCopy;
+    integration: PageCopy;
     about: PageCopy;
     notFound: PageCopy;
   };
@@ -176,6 +178,79 @@ export interface Copy {
     nothingYet: string;
     actions: Record<string, string>;
   };
+  integration: {
+    tokens: {
+      title: string;
+      lede: string;
+      newToken: string;
+      columns: { name: string; prefix: string; created: string; lastUsed: string; status: string };
+      status: { active: string; revoked: string };
+      neverUsed: string;
+      revoke: string;
+      revokeTitle: (name: string) => string;
+      revokeBody: string;
+      issuedTitle: string;
+      issuedWarning: string;
+      valueLabel: string;
+      nothingYet: string;
+      create: { title: string; name: string; nameHint: string };
+    };
+    endpoints: {
+      title: string;
+      lede: string;
+      apiBaseUrl: string;
+      apiBaseUrlUnknown: string;
+      sipDomain: string;
+      kinds: string;
+      items: { ensure: string; read: string; rotate: string; disable: string; registration: string };
+      example: string;
+      openApi: string;
+    };
+    push: {
+      title: string;
+      lede: string;
+      enabled: string;
+      url: string;
+      urlHint: string;
+      headerName: string;
+      headerValue: string;
+      headerValueHint: string;
+      headerValueSet: (hint: string | null) => string;
+      headerValueNotSet: string;
+      replaceValue: string;
+      clearValue: string;
+      connectTimeout: string;
+      readTimeout: string;
+      savedBy: (login: string, when: string) => string;
+      readOnlyNote: string;
+      contractTitle: string;
+      contractNote: string;
+      test: string;
+      testModal: {
+        title: string;
+        body: string;
+        caller: string;
+        callee: string;
+        send: string;
+        noUrl: string;
+        result: string;
+        status: string;
+        duration: (ms: number) => string;
+        response: string;
+        error: string;
+        sentBody: string;
+      };
+    };
+    deliveries: {
+      title: string;
+      lede: string;
+      refresh: string;
+      columns: { time: string; kind: string; from: string; to: string; outcome: string; status: string; duration: string; details: string };
+      kinds: Record<PushDeliveryKind, string>;
+      outcomes: Record<PushDeliveryOutcome, string>;
+      nothingYet: string;
+    };
+  };
   credentialsModal: {
     generatedPasswordWarning: string;
   };
@@ -220,6 +295,7 @@ const en: Copy = {
     sipAccounts: 'SIP numbers',
     consoleUsers: 'Console users',
     audit: 'Audit',
+    integration: 'Integration',
     about: 'About',
     menu: 'Menu',
   },
@@ -229,6 +305,7 @@ const en: Copy = {
     sipAccounts: { title: 'SIP numbers', kicker: 'Intercom panels and subscribers' },
     consoleUsers: { title: 'Console users', kicker: 'Who may log in here' },
     audit: { title: 'Audit', kicker: 'Who changed what, newest first' },
+    integration: { title: 'Integration', kicker: 'The seam with the operator backend' },
     about: { title: 'ThunderVox Console', kicker: 'About and legal' },
     notFound: { title: 'Page not found', kicker: 'Nothing at this address' },
   },
@@ -398,6 +475,95 @@ const en: Copy = {
       CONSOLE_USER_UPDATED: 'User changed',
       CONSOLE_USER_PASSWORD_RESET: 'User password replaced',
       SUPER_ADMINISTRATOR_SYNCED: 'Super administrator synced from the environment',
+      SERVICE_TOKEN_CREATED: 'Service token issued',
+      SERVICE_TOKEN_REVOKED: 'Service token revoked',
+      PUSH_SETTINGS_UPDATED: 'Wake push settings changed',
+      PUSH_TEST_SENT: 'Test push sent',
+    },
+  },
+  integration: {
+    tokens: {
+      title: 'API access',
+      lede: 'Named tokens of the service API. A token opens everything the operator backend may do; every change made with it is signed by the token name in the audit trail.',
+      newToken: 'New token',
+      columns: { name: 'Name', prefix: 'Prefix', created: 'Created', lastUsed: 'Last used', status: 'Status' },
+      status: { active: 'Active', revoked: 'Revoked' },
+      neverUsed: 'never',
+      revoke: 'Revoke',
+      revokeTitle: (name) => `Revoke the token "${name}"?`,
+      revokeBody: 'The operator backend stops working with this token at once. Issue a new one and put it into the integration before revoking the old one.',
+      issuedTitle: 'Token issued',
+      issuedWarning: 'Copy the token now: only its hash is stored and it will not be shown again.',
+      valueLabel: 'Token',
+      nothingYet: 'No tokens yet: the service API refuses every call until one is issued.',
+      create: {
+        title: 'New token',
+        name: 'Name',
+        nameHint: 'Who uses it (the operator backend, an integrator); the audit trail shows it as token:<name>',
+      },
+    },
+    endpoints: {
+      title: 'Endpoints',
+      lede: 'Ready-made calls of the service API, with the X-SERVICE-TOKEN header carrying a token from above. The same id always gets the same number.',
+      apiBaseUrl: 'API base URL',
+      apiBaseUrlUnknown: 'not set in the deployment (TVX_PUBLIC_API_URL) - the paths below are relative',
+      sipDomain: 'SIP domain (realm)',
+      kinds:
+        'kind is PANEL for an intercom panel (external_id = its device id in the operator backend, for Modus the host:port of controls/devices) or CLIENT for an app subscriber (external_id = the subscriber account).',
+      items: {
+        ensure: 'Create or get the number of an endpoint (upsert): the password is in the response on creation only',
+        read: 'The number as it is - never a password',
+        rotate: 'Issue a new password (in the response)',
+        disable: 'Out of service: blocked, kept for the id; the next PUT brings it back',
+        registration: 'Whether the endpoint is registered right now',
+      },
+      example: 'Example',
+      openApi: 'OpenAPI document and Swagger UI',
+    },
+    push: {
+      title: 'Wake push',
+      lede: 'When a panel calls a subscriber whose phone is asleep, the core parks the call and this server posts a wake request to the operator backend. The backend pushes the phone, the phone registers, the call goes through.',
+      enabled: 'Send wake pushes',
+      url: 'URL',
+      urlHint: 'POST endpoint of the operator backend that turns the request into a push',
+      headerName: 'Auth header',
+      headerValue: 'Auth header value',
+      headerValueHint: 'Stored and never shown again. Leave empty to keep the current value.',
+      headerValueSet: (hint) => (hint ? `set, ends with …${hint}` : 'set'),
+      headerValueNotSet: 'not set',
+      replaceValue: 'Replace the value',
+      clearValue: 'Clear the value',
+      connectTimeout: 'Connect timeout, ms',
+      readTimeout: 'Read timeout, ms',
+      savedBy: (login, when) => `Saved by ${login}, ${when}`,
+      readOnlyNote: 'Only the super administrator changes these settings.',
+      contractTitle: 'Request body (contract v2)',
+      contractNote:
+        'call_id is a UUID made per call (the operator keys its call history by it); sip_call_id is the SIP Call-ID for the core log; caller_id and callee_id are the external ids of the two numbers - null when a number has none. The three v1 names (call_id, caller_id, callee_id) are kept.',
+      test: 'Test push',
+      testModal: {
+        title: 'Test push',
+        body: 'The same request a live call would send, to the URL above, right now. The result is recorded as TEST in the delivery log.',
+        caller: 'Calling panel',
+        callee: 'Called subscriber',
+        send: 'Send',
+        noUrl: 'Set the URL and save the settings first.',
+        result: 'Result',
+        status: 'HTTP status',
+        duration: (ms) => `${ms} ms`,
+        response: 'Response',
+        error: 'Error',
+        sentBody: 'Sent body',
+      },
+    },
+    deliveries: {
+      title: 'Delivery log',
+      lede: 'Every wake push, live calls and tests alike; rows are kept for a week.',
+      refresh: 'Refresh',
+      columns: { time: 'Time', kind: 'Kind', from: 'From', to: 'To', outcome: 'Outcome', status: 'HTTP', duration: 'Time, ms', details: 'Response / error' },
+      kinds: { LIVE: 'live', TEST: 'test' },
+      outcomes: { DELIVERED: 'Delivered', REJECTED: 'Rejected', FAILED: 'Failed', SKIPPED: 'Skipped' },
+      nothingYet: 'No pushes yet.',
     },
   },
   credentialsModal: {
@@ -447,6 +613,7 @@ const ru: Copy = {
     sipAccounts: 'SIP-номера',
     consoleUsers: 'Пользователи',
     audit: 'Журнал',
+    integration: 'Интеграция',
     about: 'О консоли',
     menu: 'Меню',
   },
@@ -456,6 +623,7 @@ const ru: Copy = {
     sipAccounts: { title: 'SIP-номера', kicker: 'Домофонные панели и абоненты' },
     consoleUsers: { title: 'Пользователи консоли', kicker: 'Кто может сюда войти' },
     audit: { title: 'Журнал действий', kicker: 'Кто что изменил, новые сверху' },
+    integration: { title: 'Интеграция', kicker: 'Стык с бэкендом оператора' },
     about: { title: 'Консоль ThunderVox', kicker: 'О консоли и правовая информация' },
     notFound: { title: 'Страница не найдена', kicker: 'По этому адресу ничего нет' },
   },
@@ -625,6 +793,95 @@ const ru: Copy = {
       CONSOLE_USER_UPDATED: 'Пользователь изменён',
       CONSOLE_USER_PASSWORD_RESET: 'Пароль пользователя заменён',
       SUPER_ADMINISTRATOR_SYNCED: 'Суперадминистратор синхронизирован из окружения',
+      SERVICE_TOKEN_CREATED: 'Выпущен сервисный токен',
+      SERVICE_TOKEN_REVOKED: 'Отозван сервисный токен',
+      PUSH_SETTINGS_UPDATED: 'Изменены настройки пуша',
+      PUSH_TEST_SENT: 'Отправлен тестовый пуш',
+    },
+  },
+  integration: {
+    tokens: {
+      title: 'Доступ к API',
+      lede: 'Именованные токены service-API. Токен открывает всё, что может бэкенд оператора; каждое изменение, сделанное им, подписано в журнале действий именем токена.',
+      newToken: 'Новый токен',
+      columns: { name: 'Название', prefix: 'Префикс', created: 'Создан', lastUsed: 'Использован', status: 'Статус' },
+      status: { active: 'Активен', revoked: 'Отозван' },
+      neverUsed: 'ни разу',
+      revoke: 'Отозвать',
+      revokeTitle: (name) => `Отозвать токен «${name}»?`,
+      revokeBody: 'Бэкенд оператора с этим токеном перестанет работать сразу. Сначала выпустите новый и впишите его в интеграцию, потом отзывайте старый.',
+      issuedTitle: 'Токен выпущен',
+      issuedWarning: 'Скопируйте токен сейчас: хранится только его хэш, второй раз он не покажется.',
+      valueLabel: 'Токен',
+      nothingYet: 'Токенов ещё нет: service-API отвечает отказом, пока не выпущен хотя бы один.',
+      create: {
+        title: 'Новый токен',
+        name: 'Название',
+        nameHint: 'Кто им пользуется (бэкенд оператора, интегратор); в журнале действий это token:<название>',
+      },
+    },
+    endpoints: {
+      title: 'Эндпоинты',
+      lede: 'Готовые вызовы service-API; токен из блока выше идёт в заголовке X-SERVICE-TOKEN. Один и тот же id всегда получает один и тот же номер.',
+      apiBaseUrl: 'Базовый URL API',
+      apiBaseUrlUnknown: 'не задан в деплое (TVX_PUBLIC_API_URL) – пути ниже относительные',
+      sipDomain: 'SIP-домен (realm)',
+      kinds:
+        'kind – PANEL для домофонной панели (external_id = её id в бэкенде оператора, для Модуса host:port из controls/devices) или CLIENT для абонента приложения (external_id = лицевой счёт).',
+      items: {
+        ensure: 'Создать или получить номер абонента (upsert): пароль в ответе только при создании',
+        read: 'Номер как есть – пароля не бывает',
+        rotate: 'Выдать новый пароль (в ответе)',
+        disable: 'Снять с обслуживания: блок, номер остаётся за id; следующий PUT вернёт его',
+        registration: 'Зарегистрирован ли абонент прямо сейчас',
+      },
+      example: 'Пример',
+      openApi: 'Документ OpenAPI и Swagger UI',
+    },
+    push: {
+      title: 'Пробуждающий пуш',
+      lede: 'Когда панель звонит абоненту, чей телефон спит, ядро паркует звонок, а этот сервер шлёт бэкенду оператора запрос на пробуждение. Бэкенд будит телефон пушем, телефон регистрируется, звонок доходит.',
+      enabled: 'Слать пробуждающие пуши',
+      url: 'URL',
+      urlHint: 'POST-метод бэкенда оператора, который превращает запрос в пуш',
+      headerName: 'Заголовок авторизации',
+      headerValue: 'Значение заголовка',
+      headerValueHint: 'Хранится и больше не показывается. Пустое поле – оставить текущее значение.',
+      headerValueSet: (hint) => (hint ? `задано, оканчивается на …${hint}` : 'задано'),
+      headerValueNotSet: 'не задано',
+      replaceValue: 'Заменить значение',
+      clearValue: 'Очистить значение',
+      connectTimeout: 'Таймаут соединения, мс',
+      readTimeout: 'Таймаут ответа, мс',
+      savedBy: (login, when) => `Сохранил ${login}, ${when}`,
+      readOnlyNote: 'Эти настройки меняет только суперадминистратор.',
+      contractTitle: 'Тело запроса (контракт v2)',
+      contractNote:
+        'call_id – UUID на каждый звонок (оператор ключует им историю звонков); sip_call_id – SIP Call-ID для лога ядра; caller_id и callee_id – внешние id обоих номеров, null, если у номера его нет. Три имени v1 (call_id, caller_id, callee_id) сохранены.',
+      test: 'Тестовый пуш',
+      testModal: {
+        title: 'Тестовый пуш',
+        body: 'Тот же запрос, что ушёл бы при живом звонке, на адрес выше, прямо сейчас. Результат попадает в журнал доставок как TEST.',
+        caller: 'Звонящая панель',
+        callee: 'Вызываемый абонент',
+        send: 'Отправить',
+        noUrl: 'Сначала задайте URL и сохраните настройки.',
+        result: 'Результат',
+        status: 'HTTP-статус',
+        duration: (ms) => `${ms} мс`,
+        response: 'Ответ',
+        error: 'Ошибка',
+        sentBody: 'Отправленное тело',
+      },
+    },
+    deliveries: {
+      title: 'Журнал доставок',
+      lede: 'Каждый пробуждающий пуш – живые звонки и тесты; строки хранятся неделю.',
+      refresh: 'Обновить',
+      columns: { time: 'Время', kind: 'Вид', from: 'От', to: 'Кому', outcome: 'Итог', status: 'HTTP', duration: 'Время, мс', details: 'Ответ / ошибка' },
+      kinds: { LIVE: 'звонок', TEST: 'тест' },
+      outcomes: { DELIVERED: 'Доставлен', REJECTED: 'Отклонён', FAILED: 'Не доставлен', SKIPPED: 'Пропущен' },
+      nothingYet: 'Пушей ещё не было.',
     },
   },
   credentialsModal: {
