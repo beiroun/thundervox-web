@@ -23,66 +23,68 @@ export function Audit() {
   const pageCount = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
 
   return (
-    <Stack gap="lg">
+    <>
       <PageHeader page={t.pages.audit} actions={isFetching && !isLoading ? <Loader size="xs" /> : undefined} />
 
-      {isLoading && <Loader size="sm" />}
-      {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
+      <Stack gap="lg">
+        {isLoading && <Loader size="sm" />}
+        {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
 
-      {data && (
-        <>
-          <Table.ScrollContainer minWidth={760}>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t.audit.columns.time}</Table.Th>
-                  <Table.Th>{t.audit.columns.who}</Table.Th>
-                  <Table.Th>{t.audit.columns.action}</Table.Th>
-                  <Table.Th>{t.audit.columns.details}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {data.items.length === 0 && (
+        {data && (
+          <>
+            <Table.ScrollContainer minWidth={760}>
+              <Table>
+                <Table.Thead>
                   <Table.Tr>
-                    <Table.Td colSpan={4}>
-                      <Text c="dimmed" size="sm">
-                        {t.audit.nothingYet}
-                      </Text>
-                    </Table.Td>
+                    <Table.Th>{t.audit.columns.time}</Table.Th>
+                    <Table.Th>{t.audit.columns.who}</Table.Th>
+                    <Table.Th>{t.audit.columns.action}</Table.Th>
+                    <Table.Th>{t.audit.columns.details}</Table.Th>
                   </Table.Tr>
-                )}
-                {data.items.map((entry) => (
-                  <Table.Tr key={entry.id}>
-                    <Table.Td>
-                      <Text size="sm" style={{ whiteSpace: 'nowrap' }}>
-                        {formatServerTime(entry.created_at)}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Group gap={6} wrap="nowrap">
-                        <Text size="sm">{entry.actor_login}</Text>
-                        {entry.actor_type !== 'ADMIN' && (
-                          <Badge size="xs" variant="outline" color="gray">
-                            {entry.actor_type.toLowerCase()}
-                          </Badge>
-                        )}
-                      </Group>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">{t.audit.actions[entry.action] ?? entry.action}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <AuditDetails entry={entry} />
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-          {pageCount > 1 && <Pagination total={pageCount} value={page} onChange={setPage} />}
-        </>
-      )}
-    </Stack>
+                </Table.Thead>
+                <Table.Tbody>
+                  {data.items.length === 0 && (
+                    <Table.Tr>
+                      <Table.Td colSpan={4}>
+                        <Text c="dimmed" size="sm">
+                          {t.audit.nothingYet}
+                        </Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
+                  {data.items.map((entry) => (
+                    <Table.Tr key={entry.id}>
+                      <Table.Td>
+                        <Text size="sm" style={{ whiteSpace: 'nowrap' }}>
+                          {formatServerTime(entry.created_at)}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap={6} wrap="nowrap">
+                          <Text size="sm">{entry.actor_login}</Text>
+                          {entry.actor_type !== 'ADMIN' && (
+                            <Badge size="xs" variant="outline" color="gray">
+                              {entry.actor_type.toLowerCase()}
+                            </Badge>
+                          )}
+                        </Group>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="sm">{t.audit.actions[entry.action] ?? entry.action}</Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <AuditDetails entry={entry} />
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+            {pageCount > 1 && <Pagination total={pageCount} value={page} onChange={setPage} />}
+          </>
+        )}
+      </Stack>
+    </>
   );
 }
 

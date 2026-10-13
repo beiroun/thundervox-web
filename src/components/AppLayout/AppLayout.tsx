@@ -15,8 +15,8 @@ import { useAppDispatch, useAppSelector } from '@/store/store';
 
 /**
  * Shell of every page behind the login: the top bar with the mark, the operator, the log-out, language and
- * theme; the primary navigation in the left column with the versions and the maker at its foot (a drawer under
- * the bar on a phone); the page itself in the editorial body.
+ * theme; the primary navigation in the left column, an icon before every item, with the versions and the maker
+ * at its foot (a drawer under the bar on a phone); the page itself in the editorial body.
  */
 export function AppLayout() {
   const dispatch = useAppDispatch();
@@ -74,7 +74,8 @@ export function AppLayout() {
               end={item.path === '/'}
               className={({ isActive }) => (isActive ? 'is-active' : undefined)}
             >
-              {t.nav[item.labelKey]}
+              <item.icon className="tvx-sidenav__icon" size={20} stroke={1.75} aria-hidden="true" />
+              <span>{t.nav[item.labelKey]}</span>
             </NavLink>
           ))}
         </nav>

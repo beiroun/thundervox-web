@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
-import { Alert, Loader, Stack } from '@mantine/core';
+import { Alert, Loader } from '@mantine/core';
 
 import { describeApiError } from '@/api/baseQuery';
 import { useGetIntegrationQuery } from '@/api/integrationApi';
@@ -25,7 +25,7 @@ export function Integration() {
   const { data: overview, isLoading, error } = useGetIntegrationQuery();
 
   return (
-    <Stack gap="lg">
+    <>
       <PageHeader page={t.pages.integration} />
 
       {isLoading && <Loader size="sm" />}
@@ -35,6 +35,6 @@ export function Integration() {
       {overview && <EndpointsSection overview={overview} />}
       {overview && <PushSettingsSection overview={overview} mayChange={mayChange} />}
       <DeliveryLogSection />
-    </Stack>
+    </>
   );
 }

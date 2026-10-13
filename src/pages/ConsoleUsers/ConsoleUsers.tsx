@@ -50,7 +50,7 @@ export function ConsoleUsers() {
   const mayManage = (user: ConsoleUser) => !user.managed_by_environment && grantableRoles.includes(user.role);
 
   return (
-    <Stack gap="lg">
+    <>
       <PageHeader
         page={t.pages.consoleUsers}
         actions={
@@ -62,97 +62,99 @@ export function ConsoleUsers() {
         }
       />
 
-      <RoleLegend />
+      <Stack gap="lg">
+        <RoleLegend />
 
-      {isLoading && <Loader size="sm" />}
-      {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
-      {updateState.isError && <Alert color="red">{describeApiError(updateState.error, t.api)}</Alert>}
+        {isLoading && <Loader size="sm" />}
+        {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
+        {updateState.isError && <Alert color="red">{describeApiError(updateState.error, t.api)}</Alert>}
 
-      {users && (
-        <Table.ScrollContainer minWidth={760}>
-            <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t.consoleUsers.columns.login}</Table.Th>
-                <Table.Th>{t.consoleUsers.columns.role}</Table.Th>
-                <Table.Th>{t.consoleUsers.columns.status}</Table.Th>
-                <Table.Th>{t.consoleUsers.columns.created}</Table.Th>
-                <Table.Th>{t.consoleUsers.columns.passwordChanged}</Table.Th>
-                <Table.Th w={48} />
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {users.map((user) => (
-                <Table.Tr key={user.id}>
-                  <Table.Td>
-                    <Text size="sm">
-                      {user.login}
-                      {user.id === me?.id && (
-                        <Text component="span" size="sm" c="dimmed">
-                          {' '}
-                          {t.consoleUsers.you}
-                        </Text>
-                      )}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <RoleBadge role={user.role} />
-                  </Table.Td>
-                  <Table.Td>
-                    {user.enabled ? (
-                      <Badge color="teal" variant="light">
-                        {t.consoleUsers.status.active}
-                      </Badge>
-                    ) : (
-                      <Badge color="red" variant="light">
-                        {t.consoleUsers.status.blocked}
-                      </Badge>
-                    )}
-                  </Table.Td>
-                  <Table.Td>{formatServerTime(user.created_at)}</Table.Td>
-                  <Table.Td>{formatServerTime(user.password_changed_at)}</Table.Td>
-                  <Table.Td>
-                    {user.managed_by_environment ? (
-                      <Tooltip label={t.consoleUsers.environmentManaged}>
-                        <IconServerCog size={18} opacity={0.6} />
-                      </Tooltip>
-                    ) : (
-                      mayManage(user) && (
-                        <ConsoleUserActions
-                          user={user}
-                          assignableRoles={grantableRoles.filter((grantable) => grantable !== user.role)}
-                          onChangeRole={(role) => void updateConsoleUser({ id: user.id, role })}
-                          onSetEnabled={(enabled) => void updateConsoleUser({ id: user.id, enabled })}
-                          onResetPassword={() => setResettingFor(user)}
-                        />
-                      )
-                    )}
-                  </Table.Td>
+        {users && (
+          <Table.ScrollContainer minWidth={760}>
+              <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t.consoleUsers.columns.login}</Table.Th>
+                  <Table.Th>{t.consoleUsers.columns.role}</Table.Th>
+                  <Table.Th>{t.consoleUsers.columns.status}</Table.Th>
+                  <Table.Th>{t.consoleUsers.columns.created}</Table.Th>
+                  <Table.Th>{t.consoleUsers.columns.passwordChanged}</Table.Th>
+                  <Table.Th w={48} />
                 </Table.Tr>
-              ))}
-            </Table.Tbody>
-            </Table>
-        </Table.ScrollContainer>
-      )}
+              </Table.Thead>
+              <Table.Tbody>
+                {users.map((user) => (
+                  <Table.Tr key={user.id}>
+                    <Table.Td>
+                      <Text size="sm">
+                        {user.login}
+                        {user.id === me?.id && (
+                          <Text component="span" size="sm" c="dimmed">
+                            {' '}
+                            {t.consoleUsers.you}
+                          </Text>
+                        )}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <RoleBadge role={user.role} />
+                    </Table.Td>
+                    <Table.Td>
+                      {user.enabled ? (
+                        <Badge color="teal" variant="light">
+                          {t.consoleUsers.status.active}
+                        </Badge>
+                      ) : (
+                        <Badge color="red" variant="light">
+                          {t.consoleUsers.status.blocked}
+                        </Badge>
+                      )}
+                    </Table.Td>
+                    <Table.Td>{formatServerTime(user.created_at)}</Table.Td>
+                    <Table.Td>{formatServerTime(user.password_changed_at)}</Table.Td>
+                    <Table.Td>
+                      {user.managed_by_environment ? (
+                        <Tooltip label={t.consoleUsers.environmentManaged}>
+                          <IconServerCog size={18} opacity={0.6} />
+                        </Tooltip>
+                      ) : (
+                        mayManage(user) && (
+                          <ConsoleUserActions
+                            user={user}
+                            assignableRoles={grantableRoles.filter((grantable) => grantable !== user.role)}
+                            onChangeRole={(role) => void updateConsoleUser({ id: user.id, role })}
+                            onSetEnabled={(enabled) => void updateConsoleUser({ id: user.id, enabled })}
+                            onResetPassword={() => setResettingFor(user)}
+                          />
+                        )
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+              </Table>
+          </Table.ScrollContainer>
+        )}
 
-      <CreateConsoleUserModal
-        opened={creating}
-        grantableRoles={grantableRoles}
-        onClose={() => setCreating(false)}
-        onCreated={showIssued(t.consoleUsers.issuedCreated)}
-      />
-      <ResetConsolePasswordModal
-        user={resettingFor}
-        onClose={() => setResettingFor(null)}
-        onReset={showIssued(t.consoleUsers.issuedPasswordReplaced)}
-      />
-      <IssuedCredentialsModal
-        fields={issued?.fields ?? null}
-        title={issued?.title ?? ''}
-        containsGeneratedPassword
-        onClose={() => setIssued(null)}
-      />
-    </Stack>
+        <CreateConsoleUserModal
+          opened={creating}
+          grantableRoles={grantableRoles}
+          onClose={() => setCreating(false)}
+          onCreated={showIssued(t.consoleUsers.issuedCreated)}
+        />
+        <ResetConsolePasswordModal
+          user={resettingFor}
+          onClose={() => setResettingFor(null)}
+          onReset={showIssued(t.consoleUsers.issuedPasswordReplaced)}
+        />
+        <IssuedCredentialsModal
+          fields={issued?.fields ?? null}
+          title={issued?.title ?? ''}
+          containsGeneratedPassword
+          onClose={() => setIssued(null)}
+        />
+      </Stack>
+    </>
   );
 }
 

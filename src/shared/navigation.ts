@@ -1,5 +1,15 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
+import {
+  IconHistory,
+  IconInfoCircle,
+  IconLayoutDashboard,
+  IconPhone,
+  IconPlugConnected,
+  IconUsers,
+  type TablerIcon,
+} from '@tabler/icons-react';
+
 import type { ConsoleRole } from '@/api/types';
 import type { Copy } from '@/i18n/dict';
 import { mayManageConsoleUsers, mayViewIntegration } from '@/shared/consoleRoles';
@@ -21,16 +31,21 @@ interface NavigationItem {
   path: RoutePath;
   /** Key of the label in the dictionary's `nav` block. */
   labelKey: keyof Copy['nav'];
+  /**
+   * Drawn before the label. The icon, not a dot, marks the active item; the choice per kind of page is the
+   * 84softworks vocabulary (NewLight/84softworks-design/design.md), the same in every product console.
+   */
+  icon: TablerIcon;
   /** Hidden from roles the server would refuse anyway; absent = every role. */
   visibleTo?: (role: ConsoleRole) => boolean;
 }
 
-/** Navigation entries in the order they appear in the header band (and the mobile drawer). */
+/** Navigation entries in the order they appear in the side column (and the drawer on a phone). */
 export const navigationItems: ReadonlyArray<NavigationItem> = [
-  { path: routePaths.dashboard, labelKey: 'dashboard' },
-  { path: routePaths.sipAccounts, labelKey: 'sipAccounts' },
-  { path: routePaths.consoleUsers, labelKey: 'consoleUsers', visibleTo: mayManageConsoleUsers },
-  { path: routePaths.audit, labelKey: 'audit' },
-  { path: routePaths.integration, labelKey: 'integration', visibleTo: mayViewIntegration },
-  { path: routePaths.about, labelKey: 'about' },
+  { path: routePaths.dashboard, labelKey: 'dashboard', icon: IconLayoutDashboard },
+  { path: routePaths.sipAccounts, labelKey: 'sipAccounts', icon: IconPhone },
+  { path: routePaths.consoleUsers, labelKey: 'consoleUsers', icon: IconUsers, visibleTo: mayManageConsoleUsers },
+  { path: routePaths.audit, labelKey: 'audit', icon: IconHistory },
+  { path: routePaths.integration, labelKey: 'integration', icon: IconPlugConnected, visibleTo: mayViewIntegration },
+  { path: routePaths.about, labelKey: 'about', icon: IconInfoCircle },
 ];

@@ -115,7 +115,7 @@ export function SipAccounts() {
   };
 
   return (
-    <Stack gap="lg">
+    <>
       <PageHeader
         page={t.pages.sipAccounts}
         actions={
@@ -127,151 +127,153 @@ export function SipAccounts() {
         }
       />
 
-      <Group>
-        <SegmentedControl
-          value={kindFilter}
-          onChange={(value) => setKindFilter(value as KindFilter)}
-          data={[
-            { value: 'ALL', label: t.sipAccounts.filterAll },
-            { value: 'PANEL', label: t.sipAccounts.filterPanels },
-            { value: 'CLIENT', label: t.sipAccounts.filterClients },
-          ]}
-        />
-        <TextInput
-          placeholder={t.sipAccounts.searchPlaceholder}
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          w={280}
-        />
-      </Group>
+      <Stack gap="lg">
+        <Group>
+          <SegmentedControl
+            value={kindFilter}
+            onChange={(value) => setKindFilter(value as KindFilter)}
+            data={[
+              { value: 'ALL', label: t.sipAccounts.filterAll },
+              { value: 'PANEL', label: t.sipAccounts.filterPanels },
+              { value: 'CLIENT', label: t.sipAccounts.filterClients },
+            ]}
+          />
+          <TextInput
+            placeholder={t.sipAccounts.searchPlaceholder}
+            leftSection={<IconSearch size={16} />}
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            w={280}
+          />
+        </Group>
 
-      {isLoading && <Loader size="sm" />}
-      {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
-      {/* Unblocking runs without a dialog, so its failure is reported on the page */}
-      {blockState.isError && dialog === null && <Alert color="red">{describeApiError(blockState.error, t.api)}</Alert>}
+        {isLoading && <Loader size="sm" />}
+        {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
+        {/* Unblocking runs without a dialog, so its failure is reported on the page */}
+        {blockState.isError && dialog === null && <Alert color="red">{describeApiError(blockState.error, t.api)}</Alert>}
 
-      {accounts && (
-        <Table.ScrollContainer minWidth={1040}>
-            <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t.sipAccounts.columns.number}</Table.Th>
-                <Table.Th>{t.sipAccounts.columns.name}</Table.Th>
-                <Table.Th>{t.sipAccounts.columns.externalId}</Table.Th>
-                <Table.Th>{t.sipAccounts.columns.kind}</Table.Th>
-                <Table.Th>{t.sipAccounts.columns.status}</Table.Th>
-                <Table.Th>{t.sipAccounts.columns.device}</Table.Th>
-                {canChange && <Table.Th w={48} />}
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {visibleAccounts.length === 0 && (
+        {accounts && (
+          <Table.ScrollContainer minWidth={1040}>
+              <Table>
+              <Table.Thead>
                 <Table.Tr>
-                  <Table.Td colSpan={canChange ? 7 : 6}>
-                    <Text c="dimmed" size="sm">
-                      {accounts.length === 0 ? t.sipAccounts.noNumbersYet : t.sipAccounts.nothingMatches}
-                    </Text>
-                  </Table.Td>
+                  <Table.Th>{t.sipAccounts.columns.number}</Table.Th>
+                  <Table.Th>{t.sipAccounts.columns.name}</Table.Th>
+                  <Table.Th>{t.sipAccounts.columns.externalId}</Table.Th>
+                  <Table.Th>{t.sipAccounts.columns.kind}</Table.Th>
+                  <Table.Th>{t.sipAccounts.columns.status}</Table.Th>
+                  <Table.Th>{t.sipAccounts.columns.device}</Table.Th>
+                  {canChange && <Table.Th w={48} />}
                 </Table.Tr>
-              )}
-              {visibleAccounts.map((account) => (
-                <Table.Tr key={account.id}>
-                  <Table.Td>
-                    <Code fz="sm">{account.username}</Code>
-                  </Table.Td>
-                  <Table.Td>{account.name}</Table.Td>
-                  <Table.Td>
-                    {account.external_id ? (
-                      <Code fz="sm">{account.external_id}</Code>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        {t.common.none}
+              </Table.Thead>
+              <Table.Tbody>
+                {visibleAccounts.length === 0 && (
+                  <Table.Tr>
+                    <Table.Td colSpan={canChange ? 7 : 6}>
+                      <Text c="dimmed" size="sm">
+                        {accounts.length === 0 ? t.sipAccounts.noNumbersYet : t.sipAccounts.nothingMatches}
                       </Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge variant="outline" color={kindColors[account.kind]}>
-                      {t.sipAccounts.kinds[account.kind]}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <SipAccountStatusBadge account={account} />
-                  </Table.Td>
-                  <Table.Td>
-                    {account.registration ? (
-                      <Stack gap={0}>
-                        <Text size="sm">{account.registration.user_agent || t.common.none}</Text>
-                        <Text size="xs" c="dimmed">
-                          {account.registration.received ?? account.registration.contact} · {t.sipAccounts.seen}{' '}
-                          {formatServerTime(account.registration.last_seen_at)}
-                        </Text>
-                      </Stack>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        {t.sipAccounts.neverRegistered}
-                      </Text>
-                    )}
-                  </Table.Td>
-                  {canChange && (
-                    <Table.Td>
-                      <SipAccountActions
-                        account={account}
-                        onEdit={() => setDialog({ type: 'edit', account })}
-                        onRotatePassword={() => setDialog({ type: 'password', account })}
-                        onBlock={() => setDialog({ type: 'block', account })}
-                        onUnblock={() => void setBlocked({ id: account.id, blocked: false })}
-                        onDelete={() => setDialog({ type: 'delete', account })}
-                      />
                     </Table.Td>
-                  )}
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-            </Table>
-        </Table.ScrollContainer>
-      )}
+                  </Table.Tr>
+                )}
+                {visibleAccounts.map((account) => (
+                  <Table.Tr key={account.id}>
+                    <Table.Td>
+                      <Code fz="sm">{account.username}</Code>
+                    </Table.Td>
+                    <Table.Td>{account.name}</Table.Td>
+                    <Table.Td>
+                      {account.external_id ? (
+                        <Code fz="sm">{account.external_id}</Code>
+                      ) : (
+                        <Text size="sm" c="dimmed">
+                          {t.common.none}
+                        </Text>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge variant="outline" color={kindColors[account.kind]}>
+                        {t.sipAccounts.kinds[account.kind]}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <SipAccountStatusBadge account={account} />
+                    </Table.Td>
+                    <Table.Td>
+                      {account.registration ? (
+                        <Stack gap={0}>
+                          <Text size="sm">{account.registration.user_agent || t.common.none}</Text>
+                          <Text size="xs" c="dimmed">
+                            {account.registration.received ?? account.registration.contact} · {t.sipAccounts.seen}{' '}
+                            {formatServerTime(account.registration.last_seen_at)}
+                          </Text>
+                        </Stack>
+                      ) : (
+                        <Text size="sm" c="dimmed">
+                          {t.sipAccounts.neverRegistered}
+                        </Text>
+                      )}
+                    </Table.Td>
+                    {canChange && (
+                      <Table.Td>
+                        <SipAccountActions
+                          account={account}
+                          onEdit={() => setDialog({ type: 'edit', account })}
+                          onRotatePassword={() => setDialog({ type: 'password', account })}
+                          onBlock={() => setDialog({ type: 'block', account })}
+                          onUnblock={() => void setBlocked({ id: account.id, blocked: false })}
+                          onDelete={() => setDialog({ type: 'delete', account })}
+                        />
+                      </Table.Td>
+                    )}
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+              </Table>
+          </Table.ScrollContainer>
+        )}
 
-      <CreateSipAccountModal
-        opened={dialog?.type === 'create'}
-        onClose={closeDialog}
-        onCreated={showIssued(t.sipAccounts.issuedCreated)}
-      />
-      <EditSipAccountModal account={dialog?.type === 'edit' ? dialog.account : null} onClose={closeDialog} />
-      <RotateSipPasswordModal
-        account={dialog?.type === 'password' ? dialog.account : null}
-        onClose={closeDialog}
-        onRotated={showIssued(t.sipAccounts.issuedPasswordReplaced)}
-      />
-      <ConfirmActionModal
-        opened={dialog?.type === 'block'}
-        title={t.sipAccounts.blockTitle(dialog?.type === 'block' ? dialog.account.username : '')}
-        confirmLabel={t.common.block}
-        loading={blockState.isLoading}
-        error={blockState.isError ? describeApiError(blockState.error, t.api) : null}
-        onConfirm={() => dialog?.type === 'block' && void confirmBlock(dialog.account)}
-        onClose={closeDialog}
-      >
-        {t.sipAccounts.blockBody}
-      </ConfirmActionModal>
-      <ConfirmActionModal
-        opened={dialog?.type === 'delete'}
-        title={t.sipAccounts.deleteTitle(dialog?.type === 'delete' ? dialog.account.username : '')}
-        confirmLabel={t.common.delete}
-        loading={deleteState.isLoading}
-        error={deleteState.isError ? describeApiError(deleteState.error, t.api) : null}
-        onConfirm={() => dialog?.type === 'delete' && void confirmDelete(dialog.account)}
-        onClose={closeDialog}
-      >
-        {t.sipAccounts.deleteBody}
-      </ConfirmActionModal>
-      <IssuedCredentialsModal
-        fields={issued?.fields ?? null}
-        title={issued?.title ?? ''}
-        containsGeneratedPassword={issued?.generated ?? false}
-        onClose={() => setIssued(null)}
-      />
-    </Stack>
+        <CreateSipAccountModal
+          opened={dialog?.type === 'create'}
+          onClose={closeDialog}
+          onCreated={showIssued(t.sipAccounts.issuedCreated)}
+        />
+        <EditSipAccountModal account={dialog?.type === 'edit' ? dialog.account : null} onClose={closeDialog} />
+        <RotateSipPasswordModal
+          account={dialog?.type === 'password' ? dialog.account : null}
+          onClose={closeDialog}
+          onRotated={showIssued(t.sipAccounts.issuedPasswordReplaced)}
+        />
+        <ConfirmActionModal
+          opened={dialog?.type === 'block'}
+          title={t.sipAccounts.blockTitle(dialog?.type === 'block' ? dialog.account.username : '')}
+          confirmLabel={t.common.block}
+          loading={blockState.isLoading}
+          error={blockState.isError ? describeApiError(blockState.error, t.api) : null}
+          onConfirm={() => dialog?.type === 'block' && void confirmBlock(dialog.account)}
+          onClose={closeDialog}
+        >
+          {t.sipAccounts.blockBody}
+        </ConfirmActionModal>
+        <ConfirmActionModal
+          opened={dialog?.type === 'delete'}
+          title={t.sipAccounts.deleteTitle(dialog?.type === 'delete' ? dialog.account.username : '')}
+          confirmLabel={t.common.delete}
+          loading={deleteState.isLoading}
+          error={deleteState.isError ? describeApiError(deleteState.error, t.api) : null}
+          onConfirm={() => dialog?.type === 'delete' && void confirmDelete(dialog.account)}
+          onClose={closeDialog}
+        >
+          {t.sipAccounts.deleteBody}
+        </ConfirmActionModal>
+        <IssuedCredentialsModal
+          fields={issued?.fields ?? null}
+          title={issued?.title ?? ''}
+          containsGeneratedPassword={issued?.generated ?? false}
+          onClose={() => setIssued(null)}
+        />
+      </Stack>
+    </>
   );
 }
 

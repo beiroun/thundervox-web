@@ -13,6 +13,15 @@ body {
   letter-spacing: var(--tvx-tracking);
 }
 
+/* Headings carry no margins of their own: Mantine resets nothing here, and the browser's default h1 margin
+   (0.67em = 27px at the title scale) used to stack on top of every intended gap. Spacing belongs to the blocks
+   below, one owner per distance. */
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
 /* Page container: left-aligned in the working area (an admin reads from the left edge, next to the column),
    capped for line length on very wide screens. */
 .tvx-wrap {
@@ -39,7 +48,7 @@ body {
 }
 
 /* Full width: the mark at the left edge above the column, the operator and the switches at the right edge.
-   24px matches the column's own padding, so the mark and the active dot share one left edge. */
+   24px matches the column's own padding, so the mark and the navigation icons share one left edge. */
 .tvx-header {
   display: flex;
   align-items: center;
@@ -174,10 +183,12 @@ body {
   flex: 1;
 }
 
+/* An item is an icon and a label on one line; the icon stands at the column's left edge, under the mark in the bar */
 .tvx-sidenav__links a {
-  position: relative;
-  display: block;
-  padding: 10px 0 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
   color: var(--mantine-color-text);
   text-decoration: none;
   font-size: var(--tvx-text-nav);
@@ -190,24 +201,27 @@ body {
   opacity: 1;
 }
 
-/* Active page: accent text and the orange dot, here on the left of the label */
-.tvx-sidenav__links a.is-active {
+/* The icon carries the item's state: ash at rest, the text colour on hover, the accent with the label when
+   active. No dot and no fill - colour is the marker, as on the landing. */
+.tvx-sidenav__icon {
+  flex-shrink: 0;
+  color: var(--tvx-ash);
+  transition: color 0.15s ease;
+}
+
+.tvx-sidenav__links a:hover .tvx-sidenav__icon {
+  color: var(--mantine-color-text);
+}
+
+/* Active page: label and icon in the accent */
+.tvx-sidenav__links a.is-active,
+.tvx-sidenav__links a.is-active .tvx-sidenav__icon {
   color: var(--tvx-accent-ink);
 }
 
-.tvx-sidenav__links a.is-active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  margin-top: -2px;
-  border-radius: 50%;
-  background: var(--tvx-accent);
-}
-
-/* --- Page --- */
+/* --- Page. Vertical rhythm, one owner per distance: the page head owns the 24px to the first block (the first
+   section after it adds no margin of its own, and a Stack starts after the head, never around it); a section owns
+   the 32px above its hairline and the 24px under it; a section title owns the 12px under itself. --- */
 .tvx-page {
   display: flex;
   flex-direction: column;
@@ -220,7 +234,7 @@ body {
 }
 
 .tvx-page__head {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 /* The page's actions sit on the title's own line, centred on it - no extra row between title and content */
@@ -236,7 +250,7 @@ body {
 .tvx-kicker {
   font-size: var(--tvx-text-nav);
   color: var(--tvx-accent-ink);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .tvx-title {
@@ -252,14 +266,18 @@ body {
   letter-spacing: -0.55px;
   color: var(--tvx-ash);
   max-width: 720px;
-  margin-top: 16px;
 }
 
 /* A block under a hairline: the subheading in 22px, then whatever it holds */
 .tvx-section {
-  margin-top: 40px;
-  padding-top: 32px;
+  margin-top: 32px;
+  padding-top: 24px;
   border-top: 1px solid var(--tvx-hairline);
+}
+
+/* The page head already owns the distance to the first block */
+.tvx-page__head + .tvx-section {
+  margin-top: 0;
 }
 
 .tvx-section__title {
@@ -267,7 +285,7 @@ body {
   font-weight: 400;
   line-height: 1.33;
   letter-spacing: -0.55px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .tvx-body {
@@ -434,7 +452,7 @@ body {
   }
 
   .tvx-sidenav__links a {
-    padding: 14px 0 14px 16px;
+    padding: 14px 0;
     font-size: 18px;
   }
 
