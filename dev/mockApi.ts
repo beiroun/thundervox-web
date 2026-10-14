@@ -20,6 +20,9 @@ import type {
   ConsoleUserCredentials,
   CreateConsoleUserRequest,
   CreateSipAccountRequest,
+  Dashboard,
+  DashboardPoint,
+  DashboardRange,
   IntegrationOverview,
   IssuedServiceToken,
   LoginRequest,
@@ -176,11 +179,13 @@ function createState(): MockState {
       password_rotated_at: minutesAgo(2 * 24 * 60),
       registration: {
         online: true,
+        contacts: 1,
         contact: 'sip:20000001@178.74.67.30:5060',
         received: '178.74.67.30:5060',
         user_agent: 'Beward DKS15122 v3.5.6',
-        expires_at: serverTime(new Date(Date.now() + 5 * 60_000)),
-        last_seen_at: minutesAgo(1),
+        online_since: minutesAgo(36 * 60),
+        last_online_at: minutesAgo(36 * 60),
+        last_offline_at: minutesAgo(36 * 60 + 4),
       },
     },
     {
@@ -194,11 +199,13 @@ function createState(): MockState {
       password_rotated_at: minutesAgo(2 * 24 * 60),
       registration: {
         online: false,
+        contacts: 0,
         contact: 'sip:20000002@178.74.67.31:5060',
         received: '178.74.67.31:5060',
         user_agent: 'Beward DKS15122 v3.5.6',
-        expires_at: minutesAgo(40),
-        last_seen_at: minutesAgo(45),
+        online_since: null,
+        last_online_at: minutesAgo(2 * 24 * 60 - 10),
+        last_offline_at: minutesAgo(45),
       },
     },
     {
@@ -212,11 +219,13 @@ function createState(): MockState {
       password_rotated_at: minutesAgo(24 * 60),
       registration: {
         online: true,
+        contacts: 2,
         contact: 'sip:10000001@10.0.0.5:52311',
         received: '93.100.12.7:52311',
-        user_agent: 'Zoiper v2.10.20',
-        expires_at: serverTime(new Date(Date.now() + 3 * 60_000)),
-        last_seen_at: minutesAgo(2),
+        user_agent: 'Modus iOS 4.12 (linphone)',
+        online_since: minutesAgo(2),
+        last_online_at: minutesAgo(2),
+        last_offline_at: minutesAgo(31),
       },
     },
     {
@@ -894,6 +903,13 @@ const routes: Route[] = [
     },
   },
 
+  // ---- Dashboard ----
+  {
+    method: 'GET',
+    pattern: /^\/dashboard$/,
+    handle: ({ state, query }): Dashboard => mockDashboard(state, query.get('range')),
+  },
+
   // ---- Audit ----
   {
     method: 'GET',
@@ -920,12 +936,85 @@ function refreshLiveState(state: MockState): void {
   const client = state.accounts.find((account) => account.username === '10000001');
   if (client?.registration) {
     const online = Math.floor(Date.now() / 45_000) % 2 === 0;
-    client.registration.online = online;
-    if (online) {
-      client.registration.last_seen_at = serverTime();
-      client.registration.expires_at = serverTime(new Date(Date.now() + 3 * 60_000));
+    if (online && !client.registration.online) {
+      client.registration.online_since = serverTime();
+      client.registration.last_online_at = serverTime();
+      client.registration.contacts = 2;
+    } else if (!online && client.registration.online) {
+      client.registration.last_offline_at = serverTime();
+      client.registration.online_since = null;
+      client.registration.contacts = 0;
     }
+    client.registration.online = online;
   }
+}
+
+// ---- Dashboard ----
+
+const dashboardRanges: Record<DashboardRange, { spanMs: number; bucketMs: number }> = {
+  '1h': { spanMs: 60 * 60_000, bucketMs: 60_000 },
+  '6h': { spanMs: 6 * 60 * 60_000, bucketMs: 5 * 60_000 },
+  '1d': { spanMs: 24 * 60 * 60_000, bucketMs: 15 * 60_000 },
+  '1w': { spanMs: 7 * 24 * 60 * 60_000, bucketMs: 60 * 60_000 },
+  '1m': { spanMs: 30 * 24 * 60 * 60_000, bucketMs: 6 * 60 * 60_000 },
+};
+
+/** Deterministic pseudo-noise per bucket, so the charts look alive and stay the same between two polls. */
+function wobble(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/** A plausible journal: presence breathing around the seeded numbers, activity scaled to the bucket length. */
+function mockDashboard(state: MockState, rangeInput: string | null): Dashboard {
+  const range = (Object.keys(dashboardRanges) as DashboardRange[]).find((candidate) => candidate === rangeInput) ?? '1h';
+  if (rangeInput && range !== rangeInput) {
+    throw new ApiFailure(wrongInputStatus, `Unknown dashboard range '${rangeInput}'`, 'Период: ожидается один из 1h, 6h, 1d, 1w, 1m');
+  }
+  const { spanMs, bucketMs } = dashboardRanges[range];
+  const enabled = state.accounts.filter((account) => account.enabled);
+  const subscribers = enabled.filter((account) => account.kind === 'CLIENT').length;
+  const onlineNow = enabled.filter((account) => account.registration?.online).length;
+  const to = Date.now();
+  const from = to - spanMs;
+  const perBucket = bucketMs / 60_000; // activity roughly per minute of bucket
+  const points: DashboardPoint[] = [];
+  let pushes = 0;
+  let registrations = 0;
+  let calls = 0;
+  for (let at = from, index = 0; at < to; at += bucketMs, index += 1) {
+    const noise = wobble(Math.floor(at / bucketMs));
+    const online = Math.max(0, Math.round(onlineNow + (noise - 0.5) * 2));
+    const point: DashboardPoint = {
+      at: serverTime(new Date(at)),
+      online,
+      offline: Math.max(0, enabled.length - online),
+      subscribers,
+      pushes: Math.round(noise * perBucket * 0.6),
+      registrations: Math.round(wobble(index + 7) * perBucket * 0.8),
+      calls: Math.round(wobble(index + 13) * perBucket * 0.5),
+    };
+    pushes += point.pushes;
+    registrations += point.registrations;
+    calls += point.calls;
+    points.push(point);
+  }
+  return {
+    range,
+    bucket_seconds: bucketMs / 1000,
+    from: serverTime(new Date(from)),
+    to: serverTime(new Date(to)),
+    counters: {
+      online: onlineNow,
+      offline: enabled.length - onlineNow,
+      subscribers,
+      pushes,
+      registrations,
+      calls,
+      calls_answered: Math.round(calls * 0.7),
+    },
+    points,
+  };
 }
 
 // ---- HTTP plumbing ----

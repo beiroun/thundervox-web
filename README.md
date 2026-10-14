@@ -18,8 +18,8 @@ audit trail. A single-page application served by nginx, talking to
 | Page | What it shows |
 |---|---|
 | Login | operator sign-in (JWT from the server) |
-| Dashboard | numbers total / online, panels, subscribers, blocked - as a metric strip; server name, version, license |
-| SIP numbers | panels and subscribers (kind `CLIENT` of the API): number, name, **external id** (the endpoint's id in the operator's backend: a panel's device id, an app client's subscriber account - the key of the service API), kind, **registration status** (online, source address, user agent, last seen); create (number and password generated unless typed), edit name and external id, new password (shown once), block, delete |
+| Dashboard | presence and activity: online, offline, subscribers, pushes, registrations, calls as a metric strip, then two charts (presence, activity) over a selectable period - 1 h, 6 h, 1 d, 1 w, 1 mo (`GET /dashboard?range=`); re-read every 30 s. The server's identity lives on About and in the footer |
+| SIP numbers | panels and subscribers (kind `CLIENT` of the API): number, name, **external id** (the endpoint's id in the operator's backend: a panel's device id, an app client's subscriber account - the key of the service API), kind, **registration status** from the server's journal (online with its devices and since when, or offline with the time it was last online, or never registered); create (number and password generated unless typed), edit name and external id, new password (shown once), block, delete |
 | Console users | readers, administrators and the environment-defined super administrator; roles as colour-coded abbreviations **SA / ADM / RD** with a legend |
 | Audit | every change of numbers and users, by whom and when |
 | Integration | the whole seam with the operator's backend: named **service API tokens** (issued once, hashed on the server, revocable), ready-made **endpoint links** with the public API address, the **wake push** gateway (URL, auth header, timeouts, a test push with the real contract body), and the **delivery log** of every push. Administrators read and test; the super administrator changes |

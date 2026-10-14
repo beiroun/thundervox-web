@@ -202,10 +202,21 @@ export function SipAccounts() {
                     <Table.Td>
                       {account.registration ? (
                         <Stack gap={0}>
-                          <Text size="sm">{account.registration.user_agent || t.common.none}</Text>
+                          <Text size="sm">
+                            {account.registration.user_agent || t.common.none}
+                            {account.registration.online && account.registration.contacts > 1 && (
+                              <Text span size="xs" c="dimmed">
+                                {' · '}
+                                {t.sipAccounts.devices(account.registration.contacts)}
+                              </Text>
+                            )}
+                          </Text>
                           <Text size="xs" c="dimmed">
-                            {account.registration.received ?? account.registration.contact} · {t.sipAccounts.seen}{' '}
-                            {formatServerTime(account.registration.last_seen_at)}
+                            {account.registration.received ?? account.registration.contact ?? t.common.none}
+                            {' · '}
+                            {account.registration.online
+                              ? `${t.sipAccounts.since} ${formatServerTime(account.registration.online_since)}`
+                              : `${t.sipAccounts.lastOnline} ${formatServerTime(account.registration.last_online_at)}`}
                           </Text>
                         </Stack>
                       ) : (

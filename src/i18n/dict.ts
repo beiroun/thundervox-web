@@ -3,7 +3,7 @@
 //
 // Console copy in English and Russian - the single source of every display string. Language-invariant tokens
 // (the wordmark, role abbreviations, numbers, hosts, e-mail) live in the components.
-import type { ConsoleRole, PushDeliveryKind, PushDeliveryOutcome, SipAccountKind } from '@/api/types';
+import type { ConsoleRole, DashboardRange, PushDeliveryKind, PushDeliveryOutcome, SipAccountKind } from '@/api/types';
 
 export type Lang = 'en' | 'ru';
 
@@ -79,19 +79,20 @@ export interface Copy {
     submit: string;
   };
   dashboard: {
+    /** Metric labels, also the series names of the charts. */
     counters: {
-      numbers: string;
-      onlineNow: string;
-      panels: string;
-      appClients: string;
-      blocked: string;
+      online: string;
+      offline: string;
+      subscribers: string;
+      pushes: string;
+      registrations: string;
+      calls: string;
     };
-    server: string;
-    serverUnreachable: string;
-    serverName: string;
-    serverVersion: string;
-    serverLicense: string;
-    consoleVersion: string;
+    ranges: Record<DashboardRange, string>;
+    presence: string;
+    presenceLede: string;
+    activity: string;
+    activityLede: string;
   };
   sipAccounts: {
     kinds: Record<SipAccountKind, string>;
@@ -112,7 +113,11 @@ export interface Copy {
     noNumbersYet: string;
     nothingMatches: string;
     neverRegistered: string;
-    seen: string;
+    /** Prefix of the time an offline number was last online. */
+    lastOnline: string;
+    /** Prefix of the time an online number came up. */
+    since: string;
+    devices: (count: number) => string;
     actions: { editDetails: string };
     issuedCreated: string;
     issuedPasswordReplaced: string;
@@ -301,7 +306,7 @@ const en: Copy = {
   },
   pages: {
     login: { title: 'Log in', kicker: 'Operator console' },
-    dashboard: { title: 'Dashboard', kicker: 'Numbers and server at a glance' },
+    dashboard: { title: 'Dashboard', kicker: 'Presence and activity at a glance' },
     sipAccounts: { title: 'SIP numbers', kicker: 'Intercom panels and subscribers' },
     consoleUsers: { title: 'Console users', kicker: 'Who may log in here' },
     audit: { title: 'Audit', kicker: 'Who changed what, newest first' },
@@ -354,18 +359,19 @@ const en: Copy = {
   },
   dashboard: {
     counters: {
-      numbers: 'numbers',
-      onlineNow: 'online now',
-      panels: 'panels',
-      appClients: 'subscribers',
-      blocked: 'blocked',
+      online: 'online',
+      offline: 'offline',
+      subscribers: 'subscribers',
+      pushes: 'pushes',
+      registrations: 'registrations',
+      calls: 'calls',
     },
-    server: 'Server',
-    serverUnreachable: 'Server not reachable',
-    serverName: 'Name',
-    serverVersion: 'Version',
-    serverLicense: 'License',
-    consoleVersion: 'Console',
+    ranges: { '1h': '1 h', '6h': '6 h', '1d': '1 d', '1w': '1 w', '1m': '1 mo' },
+    presence: 'Presence',
+    presenceLede:
+      'Numbers online and offline over the period, sampled every half-minute; subscribers are the app client numbers in service.',
+    activity: 'Activity',
+    activityLede: 'Wake pushes sent, devices coming online and calls started, per bucket of the period.',
   },
   sipAccounts: {
     kinds: { PANEL: 'Panel', CLIENT: 'Subscriber' },
@@ -386,7 +392,9 @@ const en: Copy = {
     noNumbersYet: 'No numbers yet.',
     nothingMatches: 'Nothing matches the filter.',
     neverRegistered: 'never registered',
-    seen: 'seen',
+    lastOnline: 'last online',
+    since: 'since',
+    devices: (count) => `${count} devices`,
     actions: { editDetails: 'Edit name and external id' },
     issuedCreated: 'Number created',
     issuedPasswordReplaced: 'Password replaced',
@@ -619,7 +627,7 @@ const ru: Copy = {
   },
   pages: {
     login: { title: 'Вход', kicker: 'Операторская консоль' },
-    dashboard: { title: 'Обзор', kicker: 'Номера и сервер одним взглядом' },
+    dashboard: { title: 'Обзор', kicker: 'Присутствие и активность одним взглядом' },
     sipAccounts: { title: 'SIP-номера', kicker: 'Домофонные панели и абоненты' },
     consoleUsers: { title: 'Пользователи консоли', kicker: 'Кто может сюда войти' },
     audit: { title: 'Журнал действий', kicker: 'Кто что изменил, новые сверху' },
@@ -672,18 +680,19 @@ const ru: Copy = {
   },
   dashboard: {
     counters: {
-      numbers: 'номеров',
-      onlineNow: 'онлайн сейчас',
-      panels: 'панелей',
-      appClients: 'абонентов',
-      blocked: 'заблокировано',
+      online: 'онлайн',
+      offline: 'офлайн',
+      subscribers: 'абонентов',
+      pushes: 'пушей',
+      registrations: 'регистраций',
+      calls: 'звонков',
     },
-    server: 'Сервер',
-    serverUnreachable: 'Сервер недоступен',
-    serverName: 'Имя',
-    serverVersion: 'Версия',
-    serverLicense: 'Лицензия',
-    consoleVersion: 'Консоль',
+    ranges: { '1h': '1 ч', '6h': '6 ч', '1d': '1 д', '1w': '1 нед', '1m': '1 мес' },
+    presence: 'Присутствие',
+    presenceLede:
+      'Номера онлайн и офлайн за период, срез каждые полминуты; абоненты – номера приложений, которые сейчас в работе.',
+    activity: 'Активность',
+    activityLede: 'Отправленные пуши, вышедшие на связь устройства и начатые звонки по отрезкам периода.',
   },
   sipAccounts: {
     kinds: { PANEL: 'Панель', CLIENT: 'Абонент' },
@@ -704,7 +713,9 @@ const ru: Copy = {
     noNumbersYet: 'Номеров пока нет.',
     nothingMatches: 'Под фильтр ничего не подходит.',
     neverRegistered: 'ни разу не регистрировался',
-    seen: 'был',
+    lastOnline: 'был онлайн',
+    since: 'с',
+    devices: (count) => `устройств: ${count}`,
     actions: { editDetails: 'Изменить имя и внешний id' },
     issuedCreated: 'Номер создан',
     issuedPasswordReplaced: 'Пароль заменён',

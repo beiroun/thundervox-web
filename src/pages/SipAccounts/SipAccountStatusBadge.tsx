@@ -7,7 +7,7 @@ import { useLang } from '@/i18n/LangContext';
 
 /**
  * Blocked wins over everything (the core refuses the number whatever its registration says); otherwise online is
- * a registration that has not expired yet, as the core stored it.
+ * what the server's registration journal says - a device reachable right now, at most a sampler tick (10 s) behind.
  */
 export function SipAccountStatusBadge({ account }: { account: SipAccount }) {
   const { t } = useLang();

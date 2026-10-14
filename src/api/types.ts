@@ -75,13 +75,21 @@ export interface ConsoleUserCredentials {
 
 export type SipAccountKind = 'PANEL' | 'CLIENT';
 
+/**
+ * The server's registration journal of a number: online now or not, and when it was last seen either way. It
+ * keeps a number that expired (unlike the core's live table), so an offline number still shows when it was online.
+ */
 export interface SipRegistration {
   online: boolean;
-  contact: string;
+  /** Live devices right now; 0 when offline. */
+  contacts: number;
+  /** The device shown: the most recently refreshed contact while online, the last one seen while offline. */
+  contact: string | null;
   received: string | null;
-  user_agent: string;
-  expires_at: string;
-  last_seen_at: string;
+  user_agent: string | null;
+  online_since: string | null;
+  last_online_at: string;
+  last_offline_at: string | null;
 }
 
 export interface SipAccount {
@@ -101,6 +109,45 @@ export interface SipAccount {
   created_at: string;
   password_rotated_at: string;
   registration: SipRegistration | null;
+}
+
+// ---- Dashboard ----
+
+/** GET /dashboard?range= - the period shown; the server picks the bucket of the series from it. */
+export type DashboardRange = '1h' | '6h' | '1d' | '1w' | '1m';
+
+export interface DashboardCounters {
+  /** Enabled numbers registered right now. */
+  online: number;
+  /** Enabled numbers not registered right now. */
+  offline: number;
+  /** Enabled app client numbers, registered or not. */
+  subscribers: number;
+  /** Over the selected range. */
+  pushes: number;
+  registrations: number;
+  calls: number;
+  calls_answered: number;
+}
+
+/** One bucket of the charts; presence values are null for a bucket without a sample (the server was down). */
+export interface DashboardPoint {
+  at: string;
+  online: number | null;
+  offline: number | null;
+  subscribers: number | null;
+  pushes: number;
+  registrations: number;
+  calls: number;
+}
+
+export interface Dashboard {
+  range: DashboardRange;
+  bucket_seconds: number;
+  from: string;
+  to: string;
+  counters: DashboardCounters;
+  points: DashboardPoint[];
 }
 
 /** POST /sip-accounts */
