@@ -306,6 +306,13 @@ h3 {
   column-gap: var(--mantine-spacing-xl);
 }
 
+/* Five columns once they fit (content = viewport - 336): the dashboard's fleet row, then its activity row */
+@media (min-width: 1216px) {
+  .tvx-metrics {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
 .tvx-metric {
   padding: 24px 0;
   border-top: 1px solid var(--tvx-hairline);

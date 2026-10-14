@@ -116,13 +116,18 @@ export interface SipAccount {
 /** GET /dashboard?range= - the period shown; the server picks the bucket of the series from it. */
 export type DashboardRange = '1h' | '6h' | '1d' | '1w' | '1m';
 
+/** Two sums hold by construction: subscribers + panels = total = online + offline. */
 export interface DashboardCounters {
+  /** Enabled app client numbers, registered or not. */
+  subscribers: number;
+  /** Enabled panel numbers, registered or not. */
+  panels: number;
+  /** Every enabled number - the ceiling of both presence charts. */
+  total: number;
   /** Enabled numbers registered right now. */
   online: number;
   /** Enabled numbers not registered right now. */
   offline: number;
-  /** Enabled app client numbers, registered or not. */
-  subscribers: number;
   /** Over the selected range. */
   pushes: number;
   registrations: number;
@@ -130,12 +135,17 @@ export interface DashboardCounters {
   calls_answered: number;
 }
 
-/** One bucket of the charts; presence values are null for a bucket without a sample (the server was down). */
+/**
+ * One bucket of the charts; the fleet and presence values are null for a bucket without a sample (the server was
+ * down), and where they exist subscribers + panels = total = online + offline.
+ */
 export interface DashboardPoint {
   at: string;
+  subscribers: number | null;
+  panels: number | null;
+  total: number | null;
   online: number | null;
   offline: number | null;
-  subscribers: number | null;
   pushes: number;
   registrations: number;
   calls: number;

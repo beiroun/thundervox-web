@@ -974,6 +974,7 @@ function mockDashboard(state: MockState, rangeInput: string | null): Dashboard {
   const { spanMs, bucketMs } = dashboardRanges[range];
   const enabled = state.accounts.filter((account) => account.enabled);
   const subscribers = enabled.filter((account) => account.kind === 'CLIENT').length;
+  const panels = enabled.filter((account) => account.kind === 'PANEL').length;
   const onlineNow = enabled.filter((account) => account.registration?.online).length;
   const to = Date.now();
   const from = to - spanMs;
@@ -984,12 +985,14 @@ function mockDashboard(state: MockState, rangeInput: string | null): Dashboard {
   let calls = 0;
   for (let at = from, index = 0; at < to; at += bucketMs, index += 1) {
     const noise = wobble(Math.floor(at / bucketMs));
-    const online = Math.max(0, Math.round(onlineNow + (noise - 0.5) * 2));
+    const online = Math.min(enabled.length, Math.max(0, Math.round(onlineNow + (noise - 0.5) * 2)));
     const point: DashboardPoint = {
       at: serverTime(new Date(at)),
-      online,
-      offline: Math.max(0, enabled.length - online),
       subscribers,
+      panels,
+      total: enabled.length,
+      online,
+      offline: enabled.length - online,
       pushes: Math.round(noise * perBucket * 0.6),
       registrations: Math.round(wobble(index + 7) * perBucket * 0.8),
       calls: Math.round(wobble(index + 13) * perBucket * 0.5),
@@ -1005,9 +1008,11 @@ function mockDashboard(state: MockState, rangeInput: string | null): Dashboard {
     from: serverTime(new Date(from)),
     to: serverTime(new Date(to)),
     counters: {
+      subscribers,
+      panels,
+      total: enabled.length,
       online: onlineNow,
       offline: enabled.length - onlineNow,
-      subscribers,
       pushes,
       registrations,
       calls,

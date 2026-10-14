@@ -81,14 +81,18 @@ export interface Copy {
   dashboard: {
     /** Metric labels, also the series names of the charts. */
     counters: {
+      subscribers: string;
+      panels: string;
+      total: string;
       online: string;
       offline: string;
-      subscribers: string;
       pushes: string;
       registrations: string;
       calls: string;
     };
     ranges: Record<DashboardRange, string>;
+    fleet: string;
+    fleetLede: string;
     presence: string;
     presenceLede: string;
     activity: string;
@@ -359,17 +363,21 @@ const en: Copy = {
   },
   dashboard: {
     counters: {
+      subscribers: 'subscribers',
+      panels: 'panels',
+      total: 'total',
       online: 'online',
       offline: 'offline',
-      subscribers: 'subscribers',
       pushes: 'pushes',
       registrations: 'registrations',
       calls: 'calls',
     },
     ranges: { '1h': '1 h', '6h': '6 h', '1d': '1 d', '1w': '1 w', '1m': '1 mo' },
+    fleet: 'Numbers',
+    fleetLede:
+      'Subscribers and panels in service over the period, sampled every half-minute; together they make the total - the load on the server and the ceiling of the chart below.',
     presence: 'Presence',
-    presenceLede:
-      'Numbers online and offline over the period, sampled every half-minute; subscribers are the app client numbers in service.',
+    presenceLede: 'Who is registered: numbers online and offline add up to the same total.',
     activity: 'Activity',
     activityLede: 'Wake pushes sent, devices coming online and calls started, per bucket of the period.',
   },
@@ -680,17 +688,21 @@ const ru: Copy = {
   },
   dashboard: {
     counters: {
+      subscribers: 'абонентов',
+      panels: 'панелей',
+      total: 'всего',
       online: 'онлайн',
       offline: 'офлайн',
-      subscribers: 'абонентов',
       pushes: 'пушей',
       registrations: 'регистраций',
       calls: 'звонков',
     },
     ranges: { '1h': '1 ч', '6h': '6 ч', '1d': '1 д', '1w': '1 нед', '1m': '1 мес' },
+    fleet: 'Номера',
+    fleetLede:
+      'Абоненты и панели в работе за период, срез каждые полминуты; вместе они дают «всего» – нагрузку на сервер и потолок графика ниже.',
     presence: 'Присутствие',
-    presenceLede:
-      'Номера онлайн и офлайн за период, срез каждые полминуты; абоненты – номера приложений, которые сейчас в работе.',
+    presenceLede: 'Кто зарегистрирован: номера онлайн и офлайн в сумме дают то же «всего».',
     activity: 'Активность',
     activityLede: 'Отправленные пуши, вышедшие на связь устройства и начатые звонки по отрезкам периода.',
   },
