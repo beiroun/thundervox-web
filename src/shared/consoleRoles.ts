@@ -24,6 +24,11 @@ export const consoleRoleColors: Record<ConsoleRole, string> = {
   READER: 'gray',
 };
 
+/** The order of a role column: the higher the role, the bigger the number. */
+export function consoleRoleRank(role: ConsoleRole): number {
+  return consoleRoles.length - consoleRoles.indexOf(role);
+}
+
 /** Creating, renaming, re-keying, blocking and deleting SIP numbers. */
 export function mayChangeSipAccounts(role: ConsoleRole): boolean {
   return role !== 'READER';

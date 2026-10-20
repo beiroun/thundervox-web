@@ -37,8 +37,9 @@ export const integrationApi = createApi({
       transformResponse: (response: BaseApiResponse<PushTestResult>) => unwrapEnvelope(response),
       invalidatesTags: ['PushDelivery'],
     }),
-    getPushDeliveries: builder.query<PushDeliveryPage, { page: number; size: number }>({
-      query: ({ page, size }) => ({ url: '/integration/push/deliveries', params: { page, size } }),
+    /** `query` – the smart search, applied by the server; absent when the typed text would not search. */
+    getPushDeliveries: builder.query<PushDeliveryPage, { page: number; size: number; query?: string }>({
+      query: ({ page, size, query }) => ({ url: '/integration/push/deliveries', params: { page, size, query } }),
       transformResponse: (response: BaseApiResponse<PushDeliveryPage>) => unwrapEnvelope(response),
       providesTags: ['PushDelivery'],
     }),

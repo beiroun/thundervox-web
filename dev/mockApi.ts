@@ -40,6 +40,13 @@ import type {
   UpdatePushSettingsRequest,
   UpdateSipAccountDetailsRequest,
 } from '../src/api/types.ts';
+import {
+  isExactSmartMatch,
+  matchesSmartQuery,
+  parseSmartQuery,
+  smartQueryProblem,
+  smartSearchDocument,
+} from '../src/shared/smartQuery.ts';
 
 const apiPrefix = '/api/v1';
 const latencyMs = 120;
@@ -552,6 +559,11 @@ const routes: Route[] = [
     handle: ({ state }): SipAccount[] => state.accounts,
   },
   {
+    method: 'GET',
+    pattern: /^\/sip-accounts\/(\d+)$/,
+    handle: ({ state, params }): SipAccount => findAccountOrFail(state, Number(params[0])),
+  },
+  {
     method: 'POST',
     pattern: /^\/sip-accounts$/,
     handle: ({ state, actor, body }): SipAccountCredentials => {
@@ -845,8 +857,27 @@ const routes: Route[] = [
       requireAdministrator(actor);
       const page = Math.max(0, Number(query.get('page') ?? 0));
       const size = Math.min(200, Math.max(1, Number(query.get('size') ?? 50)));
-      const newestFirst = [...state.deliveries].reverse();
-      return { items: newestFirst.slice(page * size, page * size + size), total: newestFirst.length, page, size };
+      const found = smartSearch(
+        [...state.deliveries].reverse(),
+        query.get('query'),
+        (delivery) =>
+          smartSearchDocument(
+            delivery.call_id,
+            delivery.sip_call_id,
+            delivery.kind,
+            delivery.caller_number,
+            delivery.caller_external_id,
+            delivery.callee_number,
+            delivery.callee_external_id,
+            delivery.url,
+            delivery.outcome,
+            delivery.http_status,
+            delivery.response_excerpt,
+            delivery.error,
+          ),
+        (delivery) => [delivery.caller_number, delivery.callee_number, delivery.call_id, delivery.sip_call_id],
+      );
+      return { items: found.slice(page * size, page * size + size), total: found.length, page, size };
     },
   },
   {
@@ -917,11 +948,54 @@ const routes: Route[] = [
     handle: ({ state, query }): AuditPage => {
       const page = Math.max(0, Number(query.get('page') ?? 0));
       const size = Math.min(200, Math.max(1, Number(query.get('size') ?? 50)));
-      const newestFirst = [...state.audit].reverse();
-      return { items: newestFirst.slice(page * size, page * size + size), total: newestFirst.length, page, size };
+      const found = smartSearch(
+        [...state.audit].reverse(),
+        query.get('query'),
+        (entry) =>
+          smartSearchDocument(
+            entry.actor_login,
+            entry.action,
+            entry.target_type,
+            entry.target_id,
+            ...Object.values((entry.details ?? {}) as Record<string, unknown>).map((value) =>
+              value == null ? null : String(value),
+            ),
+          ),
+        (entry) => {
+          const details = (entry.details ?? {}) as Record<string, unknown>;
+          return [entry.target_id, entry.actor_login, details.username as string, details.login as string];
+        },
+      );
+      return { items: found.slice(page * size, page * size + size), total: found.length, page, size };
     },
   },
 ];
+
+/**
+ * The server's smart search over a journal (SmartQuery.kt): the same parsing and refusals as the console's own,
+ * matching rows newest first with the exact key hits on top.
+ */
+function smartSearch<Row>(
+  rows: Row[],
+  rawQuery: string | null,
+  documentOf: (row: Row) => string,
+  exactKeysOf: (row: Row) => (string | number | null | undefined)[],
+): Row[] {
+  if (!rawQuery?.trim()) {
+    return rows;
+  }
+  const problem = smartQueryProblem(rawQuery);
+  if (problem === 'tooLong') {
+    throw new ApiFailure(wrongInputStatus, 'Search query is longer than 100 characters', 'Запрос длиннее 100 символов');
+  }
+  const smartQuery = parseSmartQuery(rawQuery);
+  if (!smartQuery) {
+    throw new ApiFailure(wrongInputStatus, 'Search query has no word of 3 characters', 'Для поиска введите не меньше 3 символов');
+  }
+  const found = rows.filter((row) => matchesSmartQuery(smartQuery, documentOf(row)));
+  const exact = found.filter((row) => isExactSmartMatch(smartQuery, exactKeysOf(row)));
+  return [...exact, ...found.filter((row) => !exact.includes(row))];
+}
 
 function dropSessionsOf(state: MockState, login: string): void {
   for (const [token, holder] of state.sessions) {

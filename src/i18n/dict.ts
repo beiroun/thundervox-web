@@ -7,6 +7,11 @@ import type { ConsoleRole, DashboardRange, PushDeliveryKind, PushDeliveryOutcome
 
 export type Lang = 'en' | 'ru';
 
+/** Locale for numbers and for sorting text in the language on screen. */
+export function localeOf(lang: Lang): string {
+  return lang === 'ru' ? 'ru-RU' : 'en-US';
+}
+
 export interface PageCopy {
   /** Browser tab and page heading. */
   title: string;
@@ -32,7 +37,10 @@ export interface Copy {
     login: PageCopy;
     dashboard: PageCopy;
     sipAccounts: PageCopy;
+    /** Card of one number: the title names the browser tab, the kicker sits above the number. */
+    sipAccount: PageCopy;
     consoleUsers: PageCopy;
+    consoleUser: PageCopy;
     audit: PageCopy;
     integration: PageCopy;
     about: PageCopy;
@@ -65,8 +73,39 @@ export interface Copy {
     replacePassword: string;
     typePasswordByHand: string;
     password: string;
-    actionsFor: (name: string) => string;
+    /** The menu of a record's changes in its card. */
+    actions: string;
+    back: string;
+    toList: string;
+    retry: string;
+    refresh: string;
     none: string;
+  };
+  table: {
+    /** Before the count under a table. */
+    found: string;
+    pageSize: string;
+    sortDescending: string;
+    sortAscending: string;
+    sortReset: string;
+    columnWidth: (title: string) => string;
+    resizeHint: string;
+    columnsHidden: (count: number) => string;
+    columnWidths: string;
+    notFitted: string;
+    notFittedHint: string;
+    resetWidths: string;
+    loadError: string;
+    nothingFound: string;
+    resetFilters: string;
+    /** Next to the search: clears the search and the filters. */
+    reset: string;
+  };
+  search: {
+    label: string;
+    clear: string;
+    tooShort: string;
+    tooLong: string;
   };
   roles: {
     titles: Record<ConsoleRole, string>;
@@ -115,7 +154,6 @@ export interface Copy {
     };
     status: { online: string; offline: string; blocked: string };
     noNumbersYet: string;
-    nothingMatches: string;
     neverRegistered: string;
     /** Prefix of the time an offline number was last online. */
     lastOnline: string;
@@ -153,8 +191,28 @@ export interface Copy {
       body: string;
     };
   };
+  sipAccountCard: {
+    notFoundTitle: string;
+    notFoundBody: string;
+    numberSection: string;
+    registrationSection: string;
+    access: string;
+    accessOpen: string;
+    created: string;
+    passwordRotated: string;
+    devicesNow: string;
+    userAgent: string;
+    received: string;
+    contact: string;
+    onlineSince: string;
+    lastOnline: string;
+    lastOffline: string;
+    neverRegistered: string;
+  };
   consoleUsers: {
     newUser: string;
+    searchPlaceholder: string;
+    nothingYet: string;
     columns: {
       login: string;
       role: string;
@@ -162,9 +220,12 @@ export interface Copy {
       created: string;
       passwordChanged: string;
     };
+    /** Flag on the operator's own record. */
     you: string;
     status: { active: string; blocked: string };
     environmentManaged: string;
+    /** Flag on the record the server environment defines; the tooltip is environmentManaged. */
+    environmentFlag: string;
     issuedCreated: string;
     issuedPasswordReplaced: string;
     credentials: { login: string; password: string };
@@ -182,10 +243,23 @@ export interface Copy {
       passwordHint: string;
     };
   };
+  consoleUserCard: {
+    notFoundTitle: string;
+    notFoundBody: string;
+    accountSection: string;
+    source: string;
+    sourceConsole: string;
+  };
   audit: {
     columns: { time: string; who: string; action: string; details: string };
+    searchPlaceholder: string;
     nothingYet: string;
     actions: Record<string, string>;
+  };
+  auditCard: {
+    target: string;
+    targetTypes: Record<string, string>;
+    actorTypes: Record<string, string>;
   };
   integration: {
     tokens: {
@@ -195,6 +269,10 @@ export interface Copy {
       columns: { name: string; prefix: string; created: string; lastUsed: string; status: string };
       status: { active: string; revoked: string };
       neverUsed: string;
+      searchPlaceholder: string;
+      createdBy: string;
+      revokedAt: string;
+      cardNote: string;
       revoke: string;
       revokeTitle: (name: string) => string;
       revokeBody: string;
@@ -257,7 +335,18 @@ export interface Copy {
       columns: { time: string; kind: string; from: string; to: string; outcome: string; status: string; duration: string; details: string };
       kinds: Record<PushDeliveryKind, string>;
       outcomes: Record<PushDeliveryOutcome, string>;
+      searchPlaceholder: string;
       nothingYet: string;
+    };
+    deliveryCard: {
+      title: (time: string) => string;
+      httpStatus: string;
+      attempts: string;
+      callId: string;
+      sipCallId: string;
+      url: string;
+      response: string;
+      error: string;
     };
   };
   credentialsModal: {
@@ -312,7 +401,9 @@ const en: Copy = {
     login: { title: 'Log in', kicker: 'Operator console' },
     dashboard: { title: 'Dashboard', kicker: 'Presence and activity at a glance' },
     sipAccounts: { title: 'SIP numbers', kicker: 'Intercom panels and subscribers' },
+    sipAccount: { title: 'SIP number', kicker: 'SIP number' },
     consoleUsers: { title: 'Console users', kicker: 'Who may log in here' },
+    consoleUser: { title: 'Console user', kicker: 'Console user' },
     audit: { title: 'Audit', kicker: 'Who changed what, newest first' },
     integration: { title: 'Integration', kicker: 'The seam with the operator backend' },
     about: { title: 'ThunderVox Console', kicker: 'About and legal' },
@@ -344,8 +435,36 @@ const en: Copy = {
     replacePassword: 'Replace password',
     typePasswordByHand: 'Type the password by hand',
     password: 'Password',
-    actionsFor: (name) => `Actions for ${name}`,
+    actions: 'Actions',
+    back: 'Back',
+    toList: 'To the list',
+    retry: 'Retry',
+    refresh: 'Refresh',
     none: '–',
+  },
+  table: {
+    found: 'Found:',
+    pageSize: 'Rows per page',
+    sortDescending: 'Sort descending',
+    sortAscending: 'Sort ascending',
+    sortReset: 'Back to the default order',
+    columnWidth: (title) => (title ? `Width of the column "${title}"` : 'Column width'),
+    resizeHint: 'Drag to change the width. Double click - the default width',
+    columnsHidden: (count) => `Columns that did not fit: ${count}`,
+    columnWidths: 'Column widths',
+    notFitted: 'Did not fit',
+    notFittedHint: 'Widen the window or narrow other columns - they come back',
+    resetWidths: 'Reset the widths',
+    loadError: 'Failed to load',
+    nothingFound: 'Nothing found for the search and filters',
+    resetFilters: 'Reset the filters',
+    reset: 'Reset',
+  },
+  search: {
+    label: 'Search',
+    clear: 'Clear the search',
+    tooShort: 'Type at least 3 characters to search',
+    tooLong: 'The query is longer than 100 characters',
   },
   roles: {
     titles: {
@@ -387,7 +506,7 @@ const en: Copy = {
     filterAll: 'All',
     filterPanels: 'Panels',
     filterClients: 'Subscribers',
-    searchPlaceholder: 'Number, name or external id',
+    searchPlaceholder: 'Number, name, external id, device - partial works',
     columns: {
       number: 'Number',
       name: 'Name',
@@ -398,7 +517,6 @@ const en: Copy = {
     },
     status: { online: 'Online', offline: 'Offline', blocked: 'Blocked' },
     noNumbersYet: 'No numbers yet.',
-    nothingMatches: 'Nothing matches the filter.',
     neverRegistered: 'never registered',
     lastOnline: 'last online',
     since: 'since',
@@ -448,8 +566,28 @@ const en: Copy = {
       body: "The old password stops working at the device's next registration. Until it gets the new password, the device cannot register or call.",
     },
   },
+  sipAccountCard: {
+    notFoundTitle: 'No such number',
+    notFoundBody: 'There is no SIP number with this id. It may have been deleted: a deleted number does not come back, and a generated number is never handed out again.',
+    numberSection: 'Number',
+    registrationSection: 'Registration',
+    access: 'Access',
+    accessOpen: 'Registers and calls',
+    created: 'Created',
+    passwordRotated: 'Password replaced',
+    devicesNow: 'Devices now',
+    userAgent: 'Device (User-Agent)',
+    received: 'Seen from',
+    contact: 'Contact',
+    onlineSince: 'Online since',
+    lastOnline: 'Last online',
+    lastOffline: 'Went offline',
+    neverRegistered: 'The number has never registered: no device has logged in with it yet.',
+  },
   consoleUsers: {
     newUser: 'New user',
+    searchPlaceholder: 'Login, role',
+    nothingYet: 'No users yet.',
     columns: {
       login: 'Login',
       role: 'Role',
@@ -457,9 +595,10 @@ const en: Copy = {
       created: 'Created',
       passwordChanged: 'Password changed',
     },
-    you: '(you)',
+    you: 'you',
     status: { active: 'Active', blocked: 'Blocked' },
     environmentManaged: 'Defined by the server environment (TVX_SUPERADMIN_*)',
+    environmentFlag: 'environment',
     issuedCreated: 'User created',
     issuedPasswordReplaced: 'Password replaced',
     credentials: { login: 'Login', password: 'Password' },
@@ -477,12 +616,21 @@ const en: Copy = {
       passwordHint: 'At least 10 characters',
     },
   },
+  consoleUserCard: {
+    notFoundTitle: 'No such user',
+    notFoundBody: 'There is no console user with this id, or your role does not manage it.',
+    accountSection: 'Account',
+    source: 'Defined by',
+    sourceConsole: 'The console',
+  },
   audit: {
     columns: { time: 'Time', who: 'Who', action: 'Action', details: 'Details' },
+    searchPlaceholder: 'Who, number, login, details - partial works',
     nothingYet: 'Nothing has happened yet.',
     actions: {
       SIP_ACCOUNT_CREATED: 'Number created',
       SIP_ACCOUNT_RENAMED: 'Number renamed',
+      SIP_ACCOUNT_DETAILS_UPDATED: 'Number name or external id changed',
       SIP_ACCOUNT_PASSWORD_ROTATED: 'Number password replaced',
       SIP_ACCOUNT_BLOCKED: 'Number blocked',
       SIP_ACCOUNT_UNBLOCKED: 'Number unblocked',
@@ -497,6 +645,20 @@ const en: Copy = {
       PUSH_TEST_SENT: 'Test push sent',
     },
   },
+  auditCard: {
+    target: 'Record',
+    targetTypes: {
+      SIP_ACCOUNT: 'SIP number',
+      CONSOLE_USER: 'Console user',
+      SERVICE_TOKEN: 'Service token',
+      PUSH_SETTINGS: 'Wake push settings',
+    },
+    actorTypes: {
+      ADMIN: 'Console user',
+      SERVICE: 'Operator backend (service API)',
+      SYSTEM: 'The server itself',
+    },
+  },
   integration: {
     tokens: {
       title: 'API access',
@@ -505,6 +667,10 @@ const en: Copy = {
       columns: { name: 'Name', prefix: 'Prefix', created: 'Created', lastUsed: 'Last used', status: 'Status' },
       status: { active: 'Active', revoked: 'Revoked' },
       neverUsed: 'never',
+      searchPlaceholder: 'Name, prefix, issued by',
+      createdBy: 'Issued by',
+      revokedAt: 'Revoked',
+      cardNote: 'The token value is shown only when it is issued; the server keeps its hash.',
       revoke: 'Revoke',
       revokeTitle: (name) => `Revoke the token "${name}"?`,
       revokeBody: 'The operator backend stops working with this token at once. Issue a new one and put it into the integration before revoking the old one.',
@@ -579,7 +745,18 @@ const en: Copy = {
       columns: { time: 'Time', kind: 'Kind', from: 'From', to: 'To', outcome: 'Outcome', status: 'HTTP', duration: 'Time, ms', details: 'Response / error' },
       kinds: { LIVE: 'live', TEST: 'test' },
       outcomes: { DELIVERED: 'Delivered', REJECTED: 'Rejected', FAILED: 'Failed', SKIPPED: 'Skipped' },
+      searchPlaceholder: 'Number, external id, call id, response - partial works',
       nothingYet: 'No pushes yet.',
+    },
+    deliveryCard: {
+      title: (time) => `Wake push ${time}`,
+      httpStatus: 'HTTP status',
+      attempts: 'Attempts',
+      callId: 'call_id',
+      sipCallId: 'sip_call_id',
+      url: 'URL',
+      response: 'Response',
+      error: 'Error',
     },
   },
   credentialsModal: {
@@ -637,7 +814,9 @@ const ru: Copy = {
     login: { title: 'Вход', kicker: 'Операторская консоль' },
     dashboard: { title: 'Обзор', kicker: 'Присутствие и активность одним взглядом' },
     sipAccounts: { title: 'SIP-номера', kicker: 'Домофонные панели и абоненты' },
+    sipAccount: { title: 'SIP-номер', kicker: 'SIP-номер' },
     consoleUsers: { title: 'Пользователи консоли', kicker: 'Кто может сюда войти' },
+    consoleUser: { title: 'Пользователь консоли', kicker: 'Пользователь консоли' },
     audit: { title: 'Журнал действий', kicker: 'Кто что изменил, новые сверху' },
     integration: { title: 'Интеграция', kicker: 'Стык с бэкендом оператора' },
     about: { title: 'Консоль ThunderVox', kicker: 'О консоли и правовая информация' },
@@ -669,8 +848,36 @@ const ru: Copy = {
     replacePassword: 'Заменить пароль',
     typePasswordByHand: 'Ввести пароль вручную',
     password: 'Пароль',
-    actionsFor: (name) => `Действия: ${name}`,
+    actions: 'Действия',
+    back: 'Назад',
+    toList: 'К списку',
+    retry: 'Повторить',
+    refresh: 'Обновить',
     none: '–',
+  },
+  table: {
+    found: 'Найдено:',
+    pageSize: 'Строк на странице',
+    sortDescending: 'Сортировать по убыванию',
+    sortAscending: 'Сортировать по возрастанию',
+    sortReset: 'Вернуть порядок по умолчанию',
+    columnWidth: (title) => (title ? `Ширина колонки «${title}»` : 'Ширина колонки'),
+    resizeHint: 'Потяните, чтобы изменить ширину. Двойной щелчок – ширина по умолчанию',
+    columnsHidden: (count) => `Не поместились колонки: ${count}`,
+    columnWidths: 'Ширина колонок',
+    notFitted: 'Не поместились',
+    notFittedHint: 'Расширьте окно или сузьте другие колонки – они вернутся',
+    resetWidths: 'Вернуть ширину по умолчанию',
+    loadError: 'Ошибка загрузки',
+    nothingFound: 'Ничего не найдено по поиску и фильтрам',
+    resetFilters: 'Сбросить фильтры',
+    reset: 'Сбросить',
+  },
+  search: {
+    label: 'Поиск',
+    clear: 'Очистить поиск',
+    tooShort: 'Для поиска введите не меньше 3 символов',
+    tooLong: 'Запрос длиннее 100 символов',
   },
   roles: {
     titles: {
@@ -712,7 +919,7 @@ const ru: Copy = {
     filterAll: 'Все',
     filterPanels: 'Панели',
     filterClients: 'Абоненты',
-    searchPlaceholder: 'Номер, имя или внешний id',
+    searchPlaceholder: 'Номер, имя, внешний id, устройство – можно частью',
     columns: {
       number: 'Номер',
       name: 'Имя',
@@ -723,7 +930,6 @@ const ru: Copy = {
     },
     status: { online: 'Онлайн', offline: 'Офлайн', blocked: 'Заблокирован' },
     noNumbersYet: 'Номеров пока нет.',
-    nothingMatches: 'Под фильтр ничего не подходит.',
     neverRegistered: 'ни разу не регистрировался',
     lastOnline: 'был онлайн',
     since: 'с',
@@ -773,8 +979,28 @@ const ru: Copy = {
       body: 'Старый пароль перестаёт работать при следующей регистрации устройства. Пока устройство не получит новый пароль, оно не сможет регистрироваться и звонить.',
     },
   },
+  sipAccountCard: {
+    notFoundTitle: 'Номер не найден',
+    notFoundBody: 'SIP-номера с таким id нет. Возможно, его удалили: удалённый номер не восстанавливается, а сгенерированный никому больше не выдаётся.',
+    numberSection: 'Номер',
+    registrationSection: 'Регистрация',
+    access: 'Доступ',
+    accessOpen: 'Регистрируется и звонит',
+    created: 'Создан',
+    passwordRotated: 'Пароль заменён',
+    devicesNow: 'Устройств сейчас',
+    userAgent: 'Устройство (User-Agent)',
+    received: 'Откуда виден',
+    contact: 'Contact',
+    onlineSince: 'Онлайн с',
+    lastOnline: 'Был онлайн',
+    lastOffline: 'Ушёл в офлайн',
+    neverRegistered: 'Номер ни разу не регистрировался: с ним ещё не входило ни одно устройство.',
+  },
   consoleUsers: {
     newUser: 'Новый пользователь',
+    searchPlaceholder: 'Логин, роль',
+    nothingYet: 'Пользователей пока нет.',
     columns: {
       login: 'Логин',
       role: 'Роль',
@@ -782,9 +1008,10 @@ const ru: Copy = {
       created: 'Создан',
       passwordChanged: 'Пароль изменён',
     },
-    you: '(вы)',
+    you: 'вы',
     status: { active: 'Активен', blocked: 'Заблокирован' },
     environmentManaged: 'Задан окружением сервера (TVX_SUPERADMIN_*)',
+    environmentFlag: 'окружение',
     issuedCreated: 'Пользователь создан',
     issuedPasswordReplaced: 'Пароль заменён',
     credentials: { login: 'Логин', password: 'Пароль' },
@@ -802,12 +1029,21 @@ const ru: Copy = {
       passwordHint: 'Не короче 10 символов',
     },
   },
+  consoleUserCard: {
+    notFoundTitle: 'Пользователь не найден',
+    notFoundBody: 'Пользователя консоли с таким id нет, или ваша роль им не управляет.',
+    accountSection: 'Учётная запись',
+    source: 'Кем задан',
+    sourceConsole: 'Консолью',
+  },
   audit: {
     columns: { time: 'Время', who: 'Кто', action: 'Действие', details: 'Подробности' },
+    searchPlaceholder: 'Кто, номер, логин, подробности – можно частью',
     nothingYet: 'Пока ничего не происходило.',
     actions: {
       SIP_ACCOUNT_CREATED: 'Номер создан',
       SIP_ACCOUNT_RENAMED: 'Номер переименован',
+      SIP_ACCOUNT_DETAILS_UPDATED: 'Изменены имя или внешний id номера',
       SIP_ACCOUNT_PASSWORD_ROTATED: 'Пароль номера заменён',
       SIP_ACCOUNT_BLOCKED: 'Номер заблокирован',
       SIP_ACCOUNT_UNBLOCKED: 'Номер разблокирован',
@@ -822,6 +1058,20 @@ const ru: Copy = {
       PUSH_TEST_SENT: 'Отправлен тестовый пуш',
     },
   },
+  auditCard: {
+    target: 'Запись',
+    targetTypes: {
+      SIP_ACCOUNT: 'SIP-номер',
+      CONSOLE_USER: 'Пользователь консоли',
+      SERVICE_TOKEN: 'Сервисный токен',
+      PUSH_SETTINGS: 'Настройки пуша',
+    },
+    actorTypes: {
+      ADMIN: 'Пользователь консоли',
+      SERVICE: 'Бэкенд оператора (service-API)',
+      SYSTEM: 'Сам сервер',
+    },
+  },
   integration: {
     tokens: {
       title: 'Доступ к API',
@@ -830,6 +1080,10 @@ const ru: Copy = {
       columns: { name: 'Название', prefix: 'Префикс', created: 'Создан', lastUsed: 'Использован', status: 'Статус' },
       status: { active: 'Активен', revoked: 'Отозван' },
       neverUsed: 'ни разу',
+      searchPlaceholder: 'Название, префикс, кто выпустил',
+      createdBy: 'Кто выпустил',
+      revokedAt: 'Отозван',
+      cardNote: 'Значение токена показывается только при выпуске; сервер хранит его хэш.',
       revoke: 'Отозвать',
       revokeTitle: (name) => `Отозвать токен «${name}»?`,
       revokeBody: 'Бэкенд оператора с этим токеном перестанет работать сразу. Сначала выпустите новый и впишите его в интеграцию, потом отзывайте старый.',
@@ -904,7 +1158,18 @@ const ru: Copy = {
       columns: { time: 'Время', kind: 'Вид', from: 'От', to: 'Кому', outcome: 'Итог', status: 'HTTP', duration: 'Время, мс', details: 'Ответ / ошибка' },
       kinds: { LIVE: 'звонок', TEST: 'тест' },
       outcomes: { DELIVERED: 'Доставлен', REJECTED: 'Отклонён', FAILED: 'Не доставлен', SKIPPED: 'Пропущен' },
+      searchPlaceholder: 'Номер, внешний id, call id, ответ – можно частью',
       nothingYet: 'Пушей ещё не было.',
+    },
+    deliveryCard: {
+      title: (time) => `Пробуждающий пуш ${time}`,
+      httpStatus: 'HTTP-статус',
+      attempts: 'Попыток',
+      callId: 'call_id',
+      sipCallId: 'sip_call_id',
+      url: 'URL',
+      response: 'Ответ',
+      error: 'Ошибка',
     },
   },
   credentialsModal: {

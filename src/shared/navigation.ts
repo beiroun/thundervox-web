@@ -27,6 +27,12 @@ export const routePaths = {
 
 export type RoutePath = (typeof routePaths)[keyof typeof routePaths];
 
+/** The card page of one SIP number. */
+export const sipAccountPath = (id: number | string) => `${routePaths.sipAccounts}/${id}`;
+
+/** The card page of one console user. */
+export const consoleUserPath = (id: number | string) => `${routePaths.consoleUsers}/${id}`;
+
 interface NavigationItem {
   path: RoutePath;
   /** Key of the label in the dictionary's `nav` block. */

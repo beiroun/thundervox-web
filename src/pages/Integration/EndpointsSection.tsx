@@ -99,7 +99,9 @@ function FactRow({ label, value, fallback }: { label: string; value: string | nu
       <span className="tvx-row__val">
         {value ? (
           <Group gap={6} wrap="nowrap" justify="flex-end">
-            <Code fz="sm">{value}</Code>
+            <Code fz="sm" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+              {value}
+            </Code>
             <CopyValue value={value} label={label} />
           </Group>
         ) : (

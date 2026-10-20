@@ -1,28 +1,121 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
-import { useState } from 'react';
-import { Alert, Badge, Button, Group, Loader, Pagination, Stack, Table, Text, Tooltip } from '@mantine/core';
-import { IconRefresh } from '@tabler/icons-react';
+import { useMemo, useState } from 'react';
+import { Badge, Button, Group, Text } from '@mantine/core';
+import { IconFilterOff, IconRefresh } from '@tabler/icons-react';
 
-import { describeApiError } from '@/api/baseQuery';
 import { useGetPushDeliveriesQuery } from '@/api/integrationApi';
+import type { PushDelivery } from '@/api/types';
+import type { TableColumn } from '@/components/AdaptiveTable/tableColumns';
+import { ListTable } from '@/components/ListTable/ListTable';
+import { SearchInput } from '@/components/SearchInput/SearchInput';
+import { TablePagination } from '@/components/TablePagination/TablePagination';
 import { useLang } from '@/i18n/LangContext';
+import { DeliveryCardModal, DeliveryParty } from '@/pages/Integration/DeliveryCardModal';
 import { outcomeColor } from '@/pages/Integration/outcomeColor';
-import { formatServerTime } from '@/shared/serverTime';
+import { ServerTimeCell } from '@/components/ServerTimeCell/ServerTimeCell';
+import { sendableSearchQuery } from '@/shared/smartQuery';
+import { useListUrlState } from '@/shared/useListUrlState';
+import { useServerPageClamp } from '@/shared/useServerPageClamp';
 
-const pageSize = 25;
-const detailsPreviewLength = 60;
+/** A page of the log is a part of a longer page: a shorter default than a list of its own. */
+const defaultPageSize = 25;
 
-/** What happened to every wake push, newest first. */
+/**
+ * What happened to every wake push, newest first. The server pages and searches the log, so the columns keep its
+ * own order; a row opens the delivery's card with the full response or error.
+ */
 export function DeliveryLogSection() {
   const { t } = useLang();
   const copy = t.integration.deliveries;
-  const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching, error, refetch } = useGetPushDeliveriesQuery(
-    { page: page - 1, size: pageSize },
+  const list = useListUrlState({ prefix: 'deliveries_', defaultSize: defaultPageSize });
+  const { data, currentData, isLoading, isFetching, error, refetch } = useGetPushDeliveriesQuery(
+    { page: list.page, size: list.size, query: sendableSearchQuery(list.query) },
     { refetchOnMountOrArgChange: true },
   );
-  const pageCount = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+  const [opened, setOpened] = useState<PushDelivery | null>(null);
+  useServerPageClamp(data?.total, list.page, list.size, list.setPage);
+
+  const columns = useMemo<TableColumn<PushDelivery>[]>(
+    () => [
+      {
+        key: 'time',
+        title: copy.columns.time,
+        width: 170,
+        // The date over the time, as the cell wraps them on a phone
+        minWidth: 96,
+        priority: 1,
+        render: (delivery) => <ServerTimeCell value={delivery.created_at} />,
+      },
+      {
+        key: 'kind',
+        title: copy.columns.kind,
+        width: 100,
+        priority: 4,
+        render: (delivery) => (
+          <Badge size="xs" variant="outline" color={delivery.kind === 'TEST' ? 'brand' : 'gray'}>
+            {copy.kinds[delivery.kind]}
+          </Badge>
+        ),
+      },
+      {
+        key: 'from',
+        title: copy.columns.from,
+        width: 150,
+        priority: 3,
+        render: (delivery) => <DeliveryParty number={delivery.caller_number} externalId={delivery.caller_external_id} />,
+      },
+      {
+        key: 'to',
+        title: copy.columns.to,
+        width: 150,
+        priority: 1,
+        render: (delivery) => <DeliveryParty number={delivery.callee_number} externalId={delivery.callee_external_id} />,
+      },
+      {
+        key: 'outcome',
+        title: copy.columns.outcome,
+        width: 140,
+        // «НЕ ДОСТАВЛЕН» is 115px with the badge's padding, the cell adds 20
+        minWidth: 136,
+        priority: 1,
+        render: (delivery) => (
+          <Badge color={outcomeColor(delivery.outcome)} variant="light">
+            {copy.outcomes[delivery.outcome]}
+          </Badge>
+        ),
+      },
+      {
+        key: 'status',
+        title: copy.columns.status,
+        width: 80,
+        priority: 4,
+        render: (delivery) => delivery.http_status ?? t.common.none,
+      },
+      {
+        key: 'duration',
+        title: copy.columns.duration,
+        width: 110,
+        priority: 5,
+        render: (delivery) => delivery.duration_ms ?? t.common.none,
+      },
+      {
+        key: 'details',
+        title: copy.columns.details,
+        minWidth: 200,
+        priority: 3,
+        render: (delivery) => {
+          const details = delivery.error ?? delivery.response_excerpt ?? '';
+          return (
+            <Text size="sm" c={delivery.error ? 'red' : undefined} lineClamp={2}>
+              {details || t.common.none}
+            </Text>
+          );
+        },
+      },
+    ],
+    [copy, t],
+  );
 
   return (
     <section className="tvx-section">
@@ -35,112 +128,50 @@ export function DeliveryLogSection() {
             {copy.lede}
           </Text>
         </div>
-        <Button variant="default" leftSection={<IconRefresh size={16} />} loading={isFetching && !isLoading} onClick={() => void refetch()}>
+        <Button
+          variant="default"
+          leftSection={<IconRefresh size={16} />}
+          loading={isFetching && !isLoading}
+          onClick={() => void refetch()}
+        >
           {copy.refresh}
         </Button>
       </Group>
 
-      {isLoading && <Loader size="sm" />}
-      {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
+      <div className="tvx-toolbar">
+        <SearchInput value={list.query} onChange={list.setQuery} placeholder={copy.searchPlaceholder} />
+        {list.isFiltered && (
+          <Button variant="subtle" color="gray" leftSection={<IconFilterOff size={16} />} onClick={list.reset}>
+            {t.table.reset}
+          </Button>
+        )}
+      </div>
 
-      {data && (
-        <Stack gap="md">
-          <Table.ScrollContainer minWidth={900}>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{copy.columns.time}</Table.Th>
-                  <Table.Th>{copy.columns.kind}</Table.Th>
-                  <Table.Th>{copy.columns.from}</Table.Th>
-                  <Table.Th>{copy.columns.to}</Table.Th>
-                  <Table.Th>{copy.columns.outcome}</Table.Th>
-                  <Table.Th>{copy.columns.status}</Table.Th>
-                  <Table.Th>{copy.columns.duration}</Table.Th>
-                  <Table.Th>{copy.columns.details}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {data.items.length === 0 && (
-                  <Table.Tr>
-                    <Table.Td colSpan={8}>
-                      <Text c="dimmed" size="sm">
-                        {copy.nothingYet}
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-                {data.items.map((delivery) => {
-                  const details = delivery.error ?? delivery.response_excerpt ?? '';
-                  return (
-                    <Table.Tr key={delivery.id}>
-                      <Table.Td>
-                        <Text size="sm" style={{ whiteSpace: 'nowrap' }}>
-                          {formatServerTime(delivery.created_at)}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge size="xs" variant="outline" color={delivery.kind === 'TEST' ? 'brand' : 'gray'}>
-                          {copy.kinds[delivery.kind]}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Party number={delivery.caller_number} externalId={delivery.caller_external_id} />
-                      </Table.Td>
-                      <Table.Td>
-                        <Party number={delivery.callee_number} externalId={delivery.callee_external_id} />
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge color={outcomeColor(delivery.outcome)} variant="light">
-                          {copy.outcomes[delivery.outcome]}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{delivery.http_status ?? t.common.none}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{delivery.duration_ms ?? t.common.none}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        {details.length > detailsPreviewLength ? (
-                          <Tooltip label={details} multiline w={420}>
-                            <Text size="sm" c={delivery.error ? 'red' : undefined} style={{ cursor: 'help' }}>
-                              {details.slice(0, detailsPreviewLength)}…
-                            </Text>
-                          </Tooltip>
-                        ) : (
-                          <Text size="sm" c={delivery.error ? 'red' : undefined}>
-                            {details || t.common.none}
-                          </Text>
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-          {pageCount > 1 && <Pagination total={pageCount} value={page} onChange={setPage} />}
-        </Stack>
-      )}
+      <ListTable
+        tableId="integration.deliveries"
+        columns={columns}
+        rows={data?.items ?? []}
+        rowKey={(delivery) => delivery.id}
+        onRowClick={setOpened}
+        isInitialLoading={isLoading}
+        isLoadingNewArgs={isFetching && !currentData && !isLoading}
+        error={error}
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+        emptyText={copy.nothingYet}
+        isFiltered={list.isFiltered}
+        onResetFilters={list.reset}
+      />
+      <TablePagination
+        total={data?.total ?? 0}
+        page={list.page}
+        size={list.size}
+        onPage={list.setPage}
+        onSize={list.setSize}
+        disabled={isFetching && !currentData}
+      />
+
+      <DeliveryCardModal delivery={opened} onClose={() => setOpened(null)} />
     </section>
-  );
-}
-
-/** A number with its external id under it, or a dash when the push did not know the party. */
-function Party({ number, externalId }: { number: string | null; externalId: string | null }) {
-  const { t } = useLang();
-
-  if (!number) {
-    return <Text size="sm">{t.common.none}</Text>;
-  }
-  return (
-    <div>
-      <Text size="sm">{number}</Text>
-      {externalId && (
-        <Text size="xs" c="dimmed">
-          {externalId}
-        </Text>
-      )}
-    </div>
   );
 }

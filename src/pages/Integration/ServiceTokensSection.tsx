@@ -1,39 +1,99 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
-import { useState } from 'react';
-import { Alert, Badge, Button, Code, Group, Loader, Table, Text } from '@mantine/core';
-import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { useMemo, useState } from 'react';
+import { Button, Code, Group, Text } from '@mantine/core';
+import { IconFilterOff, IconPlus } from '@tabler/icons-react';
 
-import { describeApiError } from '@/api/baseQuery';
-import { useListServiceTokensQuery, useRevokeServiceTokenMutation } from '@/api/integrationApi';
+import { useListServiceTokensQuery } from '@/api/integrationApi';
 import type { IssuedServiceToken, ServiceToken } from '@/api/types';
-import { ConfirmActionModal } from '@/components/ConfirmActionModal/ConfirmActionModal';
+import type { TableColumn } from '@/components/AdaptiveTable/tableColumns';
 import { IssuedCredentialsModal } from '@/components/IssuedCredentialsModal/IssuedCredentialsModal';
+import { ListTable } from '@/components/ListTable/ListTable';
+import { SearchInput } from '@/components/SearchInput/SearchInput';
+import { TablePagination } from '@/components/TablePagination/TablePagination';
+import { localeOf } from '@/i18n/dict';
 import { useLang } from '@/i18n/LangContext';
 import { IssueServiceTokenModal } from '@/pages/Integration/IssueServiceTokenModal';
+import { ServiceTokenCardModal } from '@/pages/Integration/ServiceTokenCardModal';
+import { ServiceTokenStatusBadge } from '@/pages/Integration/ServiceTokenStatusBadge';
+import { rowComparator } from '@/shared/columnSort';
 import { formatServerTime } from '@/shared/serverTime';
+import { smartSearchDocument } from '@/shared/smartQuery';
+import { useClientList } from '@/shared/useClientList';
+import { useListUrlState } from '@/shared/useListUrlState';
 
-/** Service API tokens: a table, "new token" and "revoke" for the super administrator. */
+const searchDocumentOf = (token: ServiceToken) => smartSearchDocument(token.name, token.token_prefix, token.created_by);
+
+const exactKeysOf = (token: ServiceToken) => [token.name, token.token_prefix];
+
+/** Service API tokens: a table and "new token"; a row opens the token's card, where it is revoked. */
 export function ServiceTokensSection({ mayChange }: { mayChange: boolean }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const copy = t.integration.tokens;
-  const { data: tokens, isLoading, error } = useListServiceTokensQuery();
-  const [revokeToken, revokeState] = useRevokeServiceTokenMutation();
+  const { data: tokens, isLoading, isFetching, error, refetch } = useListServiceTokensQuery();
+  const list = useListUrlState({ prefix: 'tokens_' });
   const [creating, setCreating] = useState(false);
   const [issued, setIssued] = useState<IssuedServiceToken | null>(null);
-  const [revoking, setRevoking] = useState<ServiceToken | null>(null);
+  const [openedId, setOpenedId] = useState<number | null>(null);
+  // The card reads the token from the list, so a revoke shows in it at once
+  const opened = tokens?.find((token) => token.id === openedId) ?? null;
 
-  const confirmRevoke = async () => {
-    if (!revoking) {
-      return;
-    }
-    try {
-      await revokeToken(revoking.id).unwrap();
-      setRevoking(null);
-    } catch {
-      // Rendered inside the dialog from the mutation state
-    }
-  };
+  const columns = useMemo<TableColumn<ServiceToken>[]>(
+    () => [
+      {
+        key: 'name',
+        title: copy.columns.name,
+        minWidth: 180,
+        priority: 1,
+        render: (token) => token.name,
+        sortValue: (token) => token.name,
+      },
+      {
+        key: 'prefix',
+        title: copy.columns.prefix,
+        width: 170,
+        priority: 4,
+        render: (token) => <Code fz="sm">{token.token_prefix}…</Code>,
+        sortValue: (token) => token.token_prefix,
+      },
+      {
+        key: 'status',
+        title: copy.columns.status,
+        width: 130,
+        priority: 2,
+        render: (token) => <ServiceTokenStatusBadge token={token} />,
+        sortValue: (token) => (token.enabled ? 1 : 0),
+      },
+      {
+        key: 'lastUsed',
+        title: copy.columns.lastUsed,
+        width: 180,
+        priority: 3,
+        render: (token) => (token.last_used_at ? formatServerTime(token.last_used_at) : copy.neverUsed),
+        sortValue: (token) => token.last_used_at,
+      },
+      {
+        key: 'created',
+        title: copy.columns.created,
+        width: 240,
+        priority: 4,
+        render: (token) => (
+          <Text size="sm">
+            {formatServerTime(token.created_at)}
+            <Text component="span" size="sm" c="dimmed">
+              {' · '}
+              {token.created_by}
+            </Text>
+          </Text>
+        ),
+        sortValue: (token) => token.created_at,
+      },
+    ],
+    [copy],
+  );
+
+  const compare = useMemo(() => rowComparator(columns, list.sort, localeOf(lang)), [columns, list.sort, lang]);
+  const shown = useClientList(tokens, { query: list.query, searchDocumentOf, exactKeysOf, compare });
 
   return (
     <section className="tvx-section">
@@ -53,90 +113,34 @@ export function ServiceTokensSection({ mayChange }: { mayChange: boolean }) {
         )}
       </Group>
 
-      {isLoading && <Loader size="sm" />}
-      {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
+      <div className="tvx-toolbar">
+        <SearchInput value={list.query} onChange={list.setQuery} placeholder={copy.searchPlaceholder} />
+        {list.isFiltered && (
+          <Button variant="subtle" color="gray" leftSection={<IconFilterOff size={16} />} onClick={list.reset}>
+            {t.table.reset}
+          </Button>
+        )}
+      </div>
 
-      {tokens && (
-        <Table.ScrollContainer minWidth={720}>
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{copy.columns.name}</Table.Th>
-                <Table.Th>{copy.columns.prefix}</Table.Th>
-                <Table.Th>{copy.columns.status}</Table.Th>
-                <Table.Th>{copy.columns.created}</Table.Th>
-                <Table.Th>{copy.columns.lastUsed}</Table.Th>
-                {mayChange && <Table.Th w={48} />}
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {tokens.length === 0 && (
-                <Table.Tr>
-                  <Table.Td colSpan={mayChange ? 6 : 5}>
-                    <Text c="dimmed" size="sm">
-                      {copy.nothingYet}
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              )}
-              {tokens.map((token) => (
-                <Table.Tr key={token.id}>
-                  <Table.Td>
-                    <Text size="sm">{token.name}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Code fz="sm">{token.token_prefix}…</Code>
-                  </Table.Td>
-                  <Table.Td>
-                    {token.enabled ? (
-                      <Badge color="teal" variant="light">
-                        {copy.status.active}
-                      </Badge>
-                    ) : (
-                      <Badge color="gray" variant="light">
-                        {copy.status.revoked}
-                      </Badge>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" style={{ whiteSpace: 'nowrap' }}>
-                      {formatServerTime(token.created_at)}
-                      <Text component="span" size="sm" c="dimmed">
-                        {' '}
-                        · {token.created_by}
-                      </Text>
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" style={{ whiteSpace: 'nowrap' }}>
-                      {token.last_used_at ? formatServerTime(token.last_used_at) : copy.neverUsed}
-                    </Text>
-                  </Table.Td>
-                  {mayChange && (
-                    <Table.Td>
-                      {token.enabled && (
-                        <Button
-                          size="compact-xs"
-                          variant="subtle"
-                          color="red"
-                          leftSection={<IconTrash size={14} />}
-                          onClick={() => {
-                            revokeState.reset();
-                            setRevoking(token);
-                          }}
-                        >
-                          {copy.revoke}
-                        </Button>
-                      )}
-                    </Table.Td>
-                  )}
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-      )}
+      <ListTable
+        tableId="integration.tokens"
+        columns={columns}
+        rows={shown.rows}
+        rowKey={(token) => token.id}
+        onRowClick={(token) => setOpenedId(token.id)}
+        sort={list.sort}
+        onSort={list.toggleSort}
+        isInitialLoading={isLoading}
+        error={error}
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+        emptyText={copy.nothingYet}
+        isFiltered={list.isFiltered}
+        onResetFilters={list.reset}
+      />
+      <TablePagination total={shown.total} />
 
+      <ServiceTokenCardModal token={opened} mayChange={mayChange} onClose={() => setOpenedId(null)} />
       <IssueServiceTokenModal opened={creating} onClose={() => setCreating(false)} onIssued={setIssued} />
       <IssuedCredentialsModal
         fields={issued ? [{ label: copy.valueLabel, value: issued.value }] : null}
@@ -145,17 +149,6 @@ export function ServiceTokensSection({ mayChange }: { mayChange: boolean }) {
         warning={copy.issuedWarning}
         onClose={() => setIssued(null)}
       />
-      <ConfirmActionModal
-        opened={revoking !== null}
-        title={copy.revokeTitle(revoking?.name ?? '')}
-        confirmLabel={copy.revoke}
-        loading={revokeState.isLoading}
-        error={revokeState.isError ? describeApiError(revokeState.error, t.api) : null}
-        onConfirm={() => void confirmRevoke()}
-        onClose={() => setRevoking(null)}
-      >
-        {copy.revokeBody}
-      </ConfirmActionModal>
     </section>
   );
 }

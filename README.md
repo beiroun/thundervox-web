@@ -19,12 +19,34 @@ audit trail. A single-page application served by nginx, talking to
 |---|---|
 | Login | operator sign-in (JWT from the server) |
 | Dashboard | presence and activity: online, offline, subscribers, pushes, registrations, calls as a metric strip, then two charts (presence, activity) over a selectable period - 1 h, 6 h, 1 d, 1 w, 1 mo (`GET /dashboard?range=`); re-read every 30 s. The server's identity lives on About and in the footer |
-| SIP numbers | panels and subscribers (kind `CLIENT` of the API): number, name, **external id** (the endpoint's id in the operator's backend: a panel's device id, an app client's subscriber account - the key of the service API), kind, **registration status** from the server's journal (online with its devices and since when, or offline with the time it was last online, or never registered); create (number and password generated unless typed), edit name and external id, new password (shown once), block, delete |
-| Console users | readers, administrators and the environment-defined super administrator; roles as colour-coded abbreviations **SA / ADM / RD** with a legend |
-| Audit | every change of numbers and users, by whom and when |
-| Integration | the whole seam with the operator's backend: named **service API tokens** (issued once, hashed on the server, revocable), ready-made **endpoint links** with the public API address, the **wake push** gateway (URL, auth header, timeouts, a test push with the real contract body), and the **delivery log** of every push. Administrators read and test; the super administrator changes |
+| SIP numbers | panels and subscribers (kind `CLIENT` of the API): number, name, **external id** (the endpoint's id in the operator's backend: a panel's device id, an app client's subscriber account - the key of the service API), kind, **registration status** from the server's journal (online with its devices and since when, or offline with the time it was last online, or never registered); create (number and password generated unless typed). A row opens the **number's card** (`/sip-accounts/:id`): every field, the registration in full, and the **Actions** menu - edit name and external id, new password (shown once), block / unblock, delete |
+| Console users | readers, administrators and the environment-defined super administrator; roles as colour-coded abbreviations **SA / ADM / RD** with a legend. A row opens the **user's card** (`/console-users/:id`) with the Actions menu: change role, new password, block / unblock |
+| Audit | every change of numbers, users, tokens and push settings, by whom and when; a row opens the entry's card with every detail and a link to the record it touched |
+| Integration | the whole seam with the operator's backend: named **service API tokens** (issued once, hashed on the server; a row opens the token's card, revoked there), ready-made **endpoint links** with the public API address, the **wake push** gateway (URL, auth header, timeouts, a test push with the real contract body), and the **delivery log** of every push (a row opens the delivery's card with the full response or error). Administrators read and test; the super administrator changes |
 | About | what the console is, running versions, legal: product, author and licensor, website, source, contact, license terms |
 | Later | sites, active calls (need the core's JSON-RPC) |
+
+### Tables
+
+Every table is one primitive (`components/AdaptiveTable`, wrapped by `ListTable` for lists):
+
+- **Never scrolls sideways.** Columns have a default width (or grow into the free width) and a priority 1-5; what
+  does not fit leaves by priority (5 first, equal ones from the right), the corner of the last heading lists what
+  left. Priority 1 (the number, the name) never leaves.
+- **Widths are the operator's.** The edge between two headings moves width from one column to its neighbour
+  (double click - the default, arrows on the focused edge - 10 px, with Shift 40); widths are remembered in the
+  browser per table (`tvx-table-column-widths:<table id>`).
+- **Smart search** in every table (`shared/smartQuery.ts`, the same rule as Modus admin): lower case and
+  `ё → е`, words in any order must all be found (partial works), at least one word of 3 characters, at most 100;
+  a one-word query equal to a key (number, external id, login, call id) puts that row first. Lists the server
+  returns whole (numbers, users, tokens) search in the browser; the paged journals (audit, deliveries) send
+  `query` and the server applies the same rule. An IP is found by its digits too (`178.74` finds `178.74.67.30:5060`).
+- **Sort by the headings** of lists held in memory: descending → ascending → the list's own order; empty values
+  last. The journals keep the server's newest-first order.
+- **State in the address**: search, filters, sort, page and page size (`?query=&kind=&sort=&direction=&page=&size=`,
+  prefixed on the Integration page) - a link, F5 and Back from a card return the same selection.
+- **No actions in a table**: a row opens its card - a page for numbers and users, a window for tokens, journal
+  entries and deliveries; every change lives in the card's **Actions** menu.
 
 ## Look, language, theme
 
@@ -86,12 +108,16 @@ display string outside `i18n/dict.ts`.
 api/          RTK Query: baseQuery (bearer from the auth slice, envelope unwrapping), one createApi per domain
 store/        Redux Toolkit: AuthSlice, RootReducer, store + typed hooks
 routes/       routes.tsx — createBrowserRouter, created once outside the React tree (React Router 8)
-pages/        one folder per page (Login, Dashboard, SipAccounts, ConsoleUsers, Audit, About, NotFound)
+pages/        one folder per page (Login, Dashboard, SipAccounts, SipAccountCard, ConsoleUsers, ConsoleUserCard, Audit,
+              Integration, About, NotFound)
 components/   AppLayout (top bar, side column with the versions at its foot), ConsoleHeader (mark, operator, switches),
               ConsoleFooter (versions + maker: column foot, login page), PageHeader,
+              AdaptiveTable (widths, priorities, sort headings), ListTable (states of a list), SearchInput,
+              TablePagination, EntityCard (card head, Actions menu, fields),
               LanguageToggle, ColorSchemeToggle, RoleBadge (+ legend), modals
 i18n/         dict.ts (EN + RU copy, one type), LangContext.tsx (locale detection, persistence, <html lang>)
 shared/       navigation.ts (paths, column entries with their icons), consoleRoles.ts (abbreviations, colours, permissions),
+              smartQuery.ts, useClientList.ts, useListUrlState.ts, columnSort.ts (search, filters, sort, pages of a list),
               documentTitle.ts (tab title per route and language), brand.ts (links, console version)
 theme/        themeMantine.ts (palette, radius, shadows, component defaults), tokens.css, fonts.css, console.css
 ```

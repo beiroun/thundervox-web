@@ -1,0 +1,118 @@
+/* SPDX-License-Identifier: BUSL-1.1 */
+/* Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE. */
+
+/*
+ * AdaptiveTable: fixed layout from the computed widths, cells wrap instead of widening the table, the heading's
+ * right edge resizes the column. Every colour is a token of tokens.css: a hairline at rest, the accent on the edge
+ * itself - the one marker colour of the skin.
+ */
+.tvx-table td {
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.tvx-table th {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tvx-table th[data-with-columns-menu] {
+  padding-right: 44px;
+}
+
+/* inline-flex keeps the text-align of the heading (centred and right-aligned columns) */
+.tvx-table__heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+.tvx-table__heading-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tvx-table__resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  z-index: 1;
+}
+
+.tvx-table__resize::after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  right: 3px;
+  width: 2px;
+  background: var(--tvx-hairline);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.tvx-table th:hover .tvx-table__resize::after {
+  opacity: 1;
+}
+
+.tvx-table__resize:hover::after,
+.tvx-table__resize:focus-visible::after {
+  top: 0;
+  bottom: 0;
+  background: var(--tvx-accent-ink);
+  opacity: 1;
+}
+
+.tvx-table__resize:focus-visible {
+  outline: none;
+}
+
+.tvx-table__columns-control {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+}
+
+/* A phone has no pointer to drag an edge with: an 8px strip with touch-action none only caught swipes and stored
+   widths nobody asked for, and swallowed taps meant for the sort. The columns menu still resets the widths. */
+@media (max-width: 47.99em) {
+  .tvx-table__resize {
+    display: none;
+  }
+
+  /* A phone always shows the columns menu (some columns are hidden there): a narrower slot for it leaves the last
+     heading its word instead of «ДЕЙ…» */
+  .tvx-table th[data-with-columns-menu] {
+    padding-right: 36px;
+  }
+
+  .tvx-table__columns-control {
+    right: 4px;
+  }
+}
+
+/* The whole heading cell is the sort toggle, not only its text: a 20px word inside a 44px cell missed most taps.
+   The columns menu comes later in the cell and stays above this layer */
+.tvx-table__sort::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* While a column is dragged: the resize cursor everywhere, no text selection */
+body.tvx-table-resizing,
+body.tvx-table-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}

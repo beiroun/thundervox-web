@@ -11,6 +11,7 @@ import type { Dashboard as DashboardData, DashboardRange } from '@/api/types';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useLang } from '@/i18n/LangContext';
 import type { Copy } from '@/i18n/dict';
+import { useIsPhone } from '@/shared/useIsPhone';
 
 const ranges: DashboardRange[] = ['1h', '6h', '1d', '1w', '1m'];
 
@@ -72,6 +73,8 @@ export function Dashboard() {
   const { t } = useLang();
   const [range, setRange] = useState<DashboardRange>('1h');
   const { data, error, isLoading } = useGetDashboardQuery(range, { pollingInterval: refreshMs });
+  // A day is 96 buckets: three bars side by side get under a pixel each on a phone, one stacked bar stays readable
+  const isPhone = useIsPhone();
 
   const points = (data?.points ?? []).map((point) => ({ ...point, label: bucketLabel(point.at, range) }));
   // Hues validated as pairs (dataviz palette checks, both schemes): accent / grape for the kinds, teal / gray for
@@ -158,6 +161,7 @@ export function Dashboard() {
         </Text>
         <BarChart
           h={260}
+          type={isPhone ? 'stacked' : 'default'}
           data={points}
           dataKey="label"
           series={activitySeries}

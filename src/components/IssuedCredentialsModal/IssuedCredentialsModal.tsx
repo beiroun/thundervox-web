@@ -38,17 +38,22 @@ export function IssuedCredentialsModal({ fields, title, containsGeneratedPasswor
         )}
         {fields?.map((field) => (
           <Group key={field.label} justify="space-between" wrap="nowrap">
-            <div>
+            {/* A token is 44 characters without a break: it wraps inside the window instead of pushing the copy
+                button off its edge (the value is shown once) */}
+            <div style={{ minWidth: 0, flex: 1 }}>
               <Text size="xs" c="dimmed">
                 {field.label}
               </Text>
-              <Code fz="md">{field.value}</Code>
+              <Code fz="md" style={{ overflowWrap: 'anywhere' }}>
+                {field.value}
+              </Code>
             </div>
             <CopyButton value={field.value}>
               {({ copied, copy }) => (
                 <Tooltip label={copied ? t.common.copied : t.common.copy}>
                   <ActionIcon
                     variant="subtle"
+                    size="lg"
                     color={copied ? 'teal' : 'gray'}
                     onClick={copy}
                     aria-label={t.common.copyValue(field.label)}

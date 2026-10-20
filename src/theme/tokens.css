@@ -32,6 +32,7 @@
   --tvx-hairline: #e5e7eb; /* the only structural divider */
   --tvx-field: #ffffff; /* background of an input */
   --tvx-chip: var(--mantine-color-gray-0); /* background of an inline code chip (numbers, external ids) */
+  --tvx-scrim: rgba(33, 40, 66, 0.4); /* the page dimmed under the phone menu: the bar's navy, not a grey */
 
   /* --- Type - Onest (Latin + Cyrillic) for everything, Clash Display for the wordmark only --- */
   --tvx-font: 'Onest', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -80,9 +81,10 @@
   --tvx-chip: rgba(255, 255, 255, 0.08); /* a chip lifts off canvas and paper alike */
   /* The bar is the canvas itself here (the canvas is that navy), so the hairline marks its edge */
   --tvx-topbar-line: var(--tvx-hairline);
+  --tvx-scrim: rgba(10, 12, 24, 0.6);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 47.99em) {
   :root {
     --tvx-page-gutter: 16px;
   }

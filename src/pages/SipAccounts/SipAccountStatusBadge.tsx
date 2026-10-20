@@ -32,3 +32,11 @@ export function SipAccountStatusBadge({ account }: { account: SipAccount }) {
     </Badge>
   );
 }
+
+/** The order of the status column, the same precedence as the badge: online above offline above blocked. */
+export function sipAccountStatusRank(account: SipAccount): number {
+  if (!account.enabled) {
+    return 0;
+  }
+  return account.registration?.online ? 2 : 1;
+}

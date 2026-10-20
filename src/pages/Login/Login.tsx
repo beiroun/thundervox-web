@@ -56,6 +56,9 @@ export function Login() {
             <form className="tvx-login__card" onSubmit={submit}>
               <Stack gap="md">
                 <TextInput
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   label={t.login.login}
                   value={login}
                   onChange={(event) => setLogin(event.currentTarget.value)}

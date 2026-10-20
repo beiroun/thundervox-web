@@ -226,6 +226,8 @@ h3 {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - var(--tvx-header-height));
+  /* dvh: on a phone vh counts the space under the browser's bars, and every page scrolled by that much */
+  min-height: calc(100dvh - var(--tvx-header-height));
 }
 
 .tvx-page__body {
@@ -348,8 +350,10 @@ h3 {
 }
 
 .tvx-row__val {
+  min-width: 0;
   text-align: right;
   max-width: 720px;
+  overflow-wrap: anywhere; /* URLs, tokens and JSON of the audit card have no spaces to break at */
 }
 
 .tvx-row__val a,
@@ -432,13 +436,145 @@ h3 {
   gap: 8px;
 }
 
-@media (max-width: 760px) {
+/* --- Lists. A page that is one list fills the viewport: its table scrolls inside under a sticky header and the
+   pagination stays at the bottom, the page itself does not scroll. 104px = the body's padding (40 + 64); below
+   480px of height the page scrolls as a whole instead of squeezing the table to nothing. --- */
+.tvx-listpage {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--tvx-header-height) - 104px);
+  min-height: 480px;
+}
+
+/* Search, filters and the list's own buttons: one wrapping row above the table, the buttons at its right end */
+.tvx-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+.tvx-toolbar__end {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  margin-left: auto;
+}
+
+.tvx-listtable {
+  position: relative;
+}
+
+.tvx-listtable--fill {
+  flex: 1;
+  min-height: 0;
+}
+
+/* A scrollbar that comes and goes would change the width and hide and show columns in turn */
+.tvx-listtable--fill .tvx-listtable__scroll {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.tvx-listtable__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.tvx-pagination {
+  padding-top: var(--mantine-spacing-md);
+}
+
+/* --- Card of one record: the page head with the record's key as the title and its badges beside it, a muted
+   line under it; then sections of fields, a caption over every value. The same fields fill the card windows. --- */
+.tvx-card__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.tvx-card__title .tvx-title {
+  overflow-wrap: anywhere;
+}
+
+.tvx-card__subtitle {
+  margin-top: 8px;
+  font-size: var(--tvx-text-nav);
+  color: var(--tvx-ash);
+  overflow-wrap: anywhere;
+}
+
+/* A date or a time in a squeezed cell: the line breaks between them, never inside one */
+.tvx-nowrap {
+  white-space: nowrap;
+}
+
+.tvx-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px var(--mantine-spacing-xl);
+}
+
+.tvx-field {
+  min-width: 0;
+}
+
+/* Long values (a SIP contact, a URL, a response) take the whole row of the grid */
+.tvx-field--wide {
+  grid-column: 1 / -1;
+}
+
+.tvx-field__lbl {
+  margin-bottom: 4px;
+  font-size: var(--tvx-text-caption);
+  color: var(--tvx-ash);
+}
+
+.tvx-field__val {
+  font-size: var(--tvx-text-nav);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.tvx-field__note {
+  font-size: var(--tvx-text-caption);
+  color: var(--tvx-ash);
+}
+
+/* Text from another system (a push response, an error): its own line breaks kept */
+.tvx-field__text {
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+.tvx-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--tvx-hairline);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tvx-link:hover {
+  color: var(--tvx-accent-ink);
+  border-color: var(--tvx-accent-ink);
+}
+
+/* The phone: Mantine's `sm`, the width the shell switches the column to a sheet at */
+@media (max-width: 47.99em) {
   .tvx-byline {
     display: none;
   }
 
   .tvx-header {
-    gap: var(--mantine-spacing-md);
+    gap: 8px;
     padding: 0 16px;
   }
 
@@ -451,7 +587,7 @@ h3 {
     gap: 8px;
   }
 
-  /* The column becomes a full-width drawer under the top bar */
+  /* The column becomes a sheet under the top bar (see «Mobile navigation sheet» at the end) */
   .tvx-sidenav {
     padding: 8px 16px 16px;
     border-right: 0;
@@ -465,6 +601,26 @@ h3 {
 
   .tvx-page__body {
     padding: 24px 0 48px;
+  }
+
+  /* A short phone has no height to spare for a list's own scroll (an iPhone SE left three rows and a scroll inside a
+     scroll): the page scrolls, the headings stick under the top bar */
+  .tvx-listpage {
+    height: auto;
+    min-height: 0;
+  }
+
+  .tvx-listtable--fill {
+    flex: none;
+  }
+
+  .tvx-listtable--fill .tvx-listtable__scroll {
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .tvx-listtable--fill table {
+    --table-sticky-header-offset: var(--tvx-header-height);
   }
 
   .tvx-row {
@@ -490,5 +646,106 @@ h3 {
 @media (max-width: 380px) {
   .tvx-wordmark {
     display: none;
+  }
+}
+
+/* --- Mobile navigation sheet (and the phone's finger-sized controls) ---
+   Mantine slides in a column of the whole screen's width and height; the menu is six items, so on a phone the
+   column is a sheet of its content's height (scrolling inside when taller than the screen) that drops from the bar
+   and dims the page below. A tap on the dimmed page, Escape or any navigation closes it (AppLayout). Closed, it is
+   hidden, not only moved away, so Tab does not walk through invisible links. The query is Mantine's `sm`, the
+   breakpoint the shell switches at. */
+.tvx-sidenav-scrim {
+  display: none;
+}
+
+@media (max-width: 47.99em) {
+  .mantine-AppShell-navbar.tvx-sidenav {
+    height: auto;
+    max-height: calc(100dvh - var(--app-shell-header-offset, 0rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 8px 16px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--tvx-hairline);
+    transform: translateY(-8px);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      transform 0.15s ease,
+      opacity 0.15s ease,
+      visibility 0s linear 0.15s;
+  }
+
+  .mantine-AppShell-navbar.tvx-sidenav[data-opened] {
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    transition:
+      transform 0.15s ease,
+      opacity 0.15s ease;
+  }
+
+  /* iOS Safari zooms the page into a field whose text is under 16px and keeps the zoom after the login, so on a
+     phone every field reads at 16px */
+  .mantine-Input-input {
+    font-size: 16px;
+  }
+
+  /* Finger-sized controls of the bar without widening it: the bar holds the mark and the wordmark down to 381px */
+  .mantine-ActionIcon-root.tvx-topbar-iconbtn {
+    width: 32px;
+    min-width: 32px;
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .tvx-langtoggle button {
+    padding: 9px 11px;
+  }
+
+  /* The burger as large a target as the bar's buttons; the 8px taken from the gap after it keeps the bar's budget */
+  .mantine-Burger-root.tvx-burger {
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+  }
+
+  .tvx-header__left {
+    gap: 8px;
+  }
+
+  /* Two numbers in a row instead of eight rows of one before the charts */
+  .tvx-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--mantine-spacing-md);
+  }
+
+  .tvx-sidenav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--tvx-scrim);
+    touch-action: none;
+    animation: tvx-scrim-in 0.15s ease;
+  }
+}
+
+@keyframes tvx-scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mantine-AppShell-navbar.tvx-sidenav,
+  .mantine-AppShell-navbar.tvx-sidenav[data-opened] {
+    transform: none;
+    transition: none;
+  }
+
+  .tvx-sidenav-scrim {
+    animation: none;
   }
 }

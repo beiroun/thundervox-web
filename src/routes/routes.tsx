@@ -6,14 +6,16 @@ import { AppLayout } from '@/components/AppLayout/AppLayout';
 import { RequireSession } from '@/components/RequireSession/RequireSession';
 import { About } from '@/pages/About/About';
 import { Audit } from '@/pages/Audit/Audit';
+import { ConsoleUserCard } from '@/pages/ConsoleUserCard/ConsoleUserCard';
 import { ConsoleUsers } from '@/pages/ConsoleUsers/ConsoleUsers';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
 import { Integration } from '@/pages/Integration/Integration';
 import { Login } from '@/pages/Login/Login';
 import { NotFound } from '@/pages/NotFound/NotFound';
+import { SipAccountCard } from '@/pages/SipAccountCard/SipAccountCard';
 import { SipAccounts } from '@/pages/SipAccounts/SipAccounts';
 import { pageHandle } from '@/shared/documentTitle';
-import { routePaths } from '@/shared/navigation';
+import { consoleUserPath, routePaths, sipAccountPath } from '@/shared/navigation';
 
 // Created once outside the React tree, as React Router 8 requires for data routers.
 // `handle.page` names the page's copy (title and kicker) in the dictionary: useDocumentTitle() puts the title in
@@ -30,7 +32,9 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard />, handle: pageHandle('dashboard') },
       { path: routePaths.sipAccounts, element: <SipAccounts />, handle: pageHandle('sipAccounts') },
+      { path: sipAccountPath(':id'), element: <SipAccountCard />, handle: pageHandle('sipAccount') },
       { path: routePaths.consoleUsers, element: <ConsoleUsers />, handle: pageHandle('consoleUsers') },
+      { path: consoleUserPath(':id'), element: <ConsoleUserCard />, handle: pageHandle('consoleUser') },
       { path: routePaths.audit, element: <Audit />, handle: pageHandle('audit') },
       { path: routePaths.integration, element: <Integration />, handle: pageHandle('integration') },
       { path: routePaths.about, element: <About />, handle: pageHandle('about') },

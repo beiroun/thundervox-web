@@ -10,8 +10,9 @@ export const auditApi = createApi({
   reducerPath: 'auditApi',
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
-    getAuditPage: builder.query<AuditPage, { page: number; size: number }>({
-      query: ({ page, size }) => ({ url: '/audit', params: { page, size } }),
+    /** `query` – the smart search, applied by the server; absent when the typed text would not search. */
+    getAuditPage: builder.query<AuditPage, { page: number; size: number; query?: string }>({
+      query: ({ page, size, query }) => ({ url: '/audit', params: { page, size, query } }),
       transformResponse: (response: BaseApiResponse<AuditPage>) => unwrapEnvelope(response),
     }),
   }),

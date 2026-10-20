@@ -247,13 +247,9 @@ export const themeMantine = createTheme({
       styles: { root: { fontWeight: 400, letterSpacing: 0 } },
     }),
     Badge: Badge.extend({
-      // overflow visible on the root and the label: Mantine clips both and shows an ellipsis, which lets an
-      // auto-layout table shrink a badge column below its text (a clipped grid item has no minimum width). Our
-      // badges are short, fixed labels (SA, PANEL, ONLINE) that must never be cut - the text columns wrap instead.
-      styles: {
-        root: { fontWeight: 400, letterSpacing: '0.06em', overflow: 'visible' },
-        label: { overflow: 'visible' },
-      },
+      // Mantine's own clipping stays: every table is fixed-layout and sized so its badges fit, and a column squeezed
+      // below its badge (a phone, an operator's drag) ends the label with an ellipsis instead of cutting it mid-letter
+      styles: { root: { fontWeight: 400, letterSpacing: '0.06em' } },
     }),
     Table: Table.extend({
       defaultProps: { verticalSpacing: 'sm', highlightOnHover: true },
@@ -273,7 +269,15 @@ export const themeMantine = createTheme({
       defaultProps: { centered: true, overlayProps: { backgroundOpacity: 0.45, blur: 2 } },
       styles: {
         content: { border: '1px solid var(--mantine-color-default-border)' },
-        title: { fontSize: 'var(--tvx-text-subheading)', letterSpacing: '-0.55px' },
+        // An unknown audit code or a token name has no spaces: it wraps instead of pushing the close button off a
+        // phone, and two lines of a title do not touch
+        title: {
+          fontSize: 'var(--tvx-text-subheading)',
+          letterSpacing: '-0.55px',
+          lineHeight: 1.25,
+          overflowWrap: 'anywhere',
+          minWidth: 0,
+        },
       },
     }),
     // Floating layers and fields on the dark canvas: without shadows a dropdown is told apart from the page only by
@@ -285,7 +289,11 @@ export const themeMantine = createTheme({
     InputWrapper: InputWrapper.extend({ styles: { label: { fontWeight: 400 } } }),
     Title: Title.extend({ styles: { root: { letterSpacing: 'var(--tvx-tracking)' } } }),
     Alert: Alert.extend({ styles: { title: { fontWeight: 400 } } }),
-    Tooltip: Tooltip.extend({ defaultProps: { withArrow: false } }),
+    // Mantine opens tooltips by the mouse only: on a phone the full role name and the like were out of reach.
+    // A tap opens them, a tap elsewhere closes; the keyboard focus opens them too
+    Tooltip: Tooltip.extend({
+      defaultProps: { withArrow: false, events: { hover: true, focus: true, touch: true } },
+    }),
     SegmentedControl: SegmentedControl.extend({
       defaultProps: { radius: 'xl' },
       styles: { label: { fontWeight: 400 } },

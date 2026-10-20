@@ -22,6 +22,11 @@ export const sipAccountsApi = createApi({
       transformResponse: (response: BaseApiResponse<SipAccount[]>) => unwrapEnvelope(response),
       providesTags: ['SipAccount'],
     }),
+    getSipAccount: builder.query<SipAccount, number>({
+      query: (id) => `/sip-accounts/${id}`,
+      transformResponse: (response: BaseApiResponse<SipAccount>) => unwrapEnvelope(response),
+      providesTags: ['SipAccount'],
+    }),
     createSipAccount: builder.mutation<SipAccountCredentials, CreateSipAccountRequest>({
       query: (body) => ({ url: '/sip-accounts', method: 'POST', body }),
       transformResponse: (response: BaseApiResponse<SipAccountCredentials>) => unwrapEnvelope(response),
@@ -52,6 +57,7 @@ export const sipAccountsApi = createApi({
 
 export const {
   useListSipAccountsQuery,
+  useGetSipAccountQuery,
   useCreateSipAccountMutation,
   useUpdateSipAccountDetailsMutation,
   useRotateSipAccountPasswordMutation,
