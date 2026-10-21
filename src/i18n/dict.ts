@@ -3,7 +3,19 @@
 //
 // Console copy in English and Russian - the single source of every display string. Language-invariant tokens
 // (the wordmark, role abbreviations, numbers, hosts, e-mail) live in the components.
-import type { ConsoleRole, DashboardRange, PushDeliveryKind, PushDeliveryOutcome, SipAccountKind } from '@/api/types';
+import type {
+  CallMode,
+  CallOutcome,
+  ConsoleRole,
+  DashboardRange,
+  PushDeliveryKind,
+  PushDeliveryOutcome,
+  RegistrationEventKind,
+  ServerEventCategory,
+  ServiceCallerAuth,
+  ServiceCallOperation,
+  SipAccountKind,
+} from '@/api/types';
 
 export type Lang = 'en' | 'ru';
 
@@ -26,6 +38,7 @@ export interface Copy {
   byline: string;
   nav: {
     dashboard: string;
+    events: string;
     sipAccounts: string;
     consoleUsers: string;
     audit: string;
@@ -36,6 +49,7 @@ export interface Copy {
   pages: {
     login: PageCopy;
     dashboard: PageCopy;
+    events: PageCopy;
     sipAccounts: PageCopy;
     /** Card of one number: the title names the browser tab, the kicker sits above the number. */
     sipAccount: PageCopy;
@@ -208,6 +222,8 @@ export interface Copy {
     lastOnline: string;
     lastOffline: string;
     neverRegistered: string;
+    /** Link to the event log searched by the number. */
+    eventsLink: string;
   };
   consoleUsers: {
     newUser: string;
@@ -250,6 +266,83 @@ export interface Copy {
     source: string;
     sourceConsole: string;
   };
+  events: {
+    filterAll: string;
+    /** The category filter: the journals of the log. */
+    categories: Record<ServerEventCategory, string>;
+    problemsOnly: string;
+    /** Next to the refresh button on the first page: the log follows the server by itself. */
+    live: string;
+    columns: { time: string; event: string; parties: string; outcome: string; details: string };
+    searchPlaceholder: string;
+    nothingYet: string;
+    /** What a line is; also the title of its card. */
+    titles: {
+      online: string;
+      offline: string;
+      call: string;
+      pushLive: string;
+      pushTest: string;
+      serviceCall: string;
+    };
+    /** In a card: show the log searched by the number, the call, the backend. */
+    related: { number: string; call: string; backend: string };
+    registration: {
+      states: Record<RegistrationEventKind, string>;
+      number: string;
+      account: string;
+      noAccount: string;
+      userAgent: string;
+      received: string;
+      contact: string;
+    };
+    call: {
+      from: string;
+      to: string;
+      mode: string;
+      modes: Record<CallMode, string>;
+      outcomes: Record<CallOutcome, string>;
+      started: string;
+      answered: string;
+      ended: string;
+      /** From the answer to the end. */
+      talk: string;
+      endReason: string;
+      endReasons: Record<string, string>;
+      sipCallId: string;
+    };
+    push: {
+      from: string;
+      to: string;
+      kinds: Record<PushDeliveryKind, string>;
+      outcomes: Record<PushDeliveryOutcome, string>;
+      httpStatus: string;
+      attempts: string;
+      callId: string;
+      sipCallId: string;
+      url: string;
+      response: string;
+      error: string;
+    };
+    serviceCall: {
+      backend: string;
+      /** How the caller identified itself, for calls without a live token. */
+      callers: Record<Exclude<ServiceCallerAuth, 'TOKEN'>, string>;
+      tokenPrefix: string;
+      operations: Record<ServiceCallOperation, string>;
+      request: string;
+      endpoint: string;
+      number: string;
+      httpStatus: string;
+      /** Short meaning of a status class next to the code. */
+      statuses: { ok: string; refused: string; forbidden: string; notFound: string; badRequest: string; serverError: string };
+      remoteAddress: string;
+      error: string;
+    };
+    duration: string;
+    durationMs: (ms: number) => string;
+    openNumber: string;
+  };
   audit: {
     columns: { time: string; who: string; action: string; details: string };
     searchPlaceholder: string;
@@ -273,6 +366,8 @@ export interface Copy {
       createdBy: string;
       revokedAt: string;
       cardNote: string;
+      /** Link to the event log: the calls made with this token. */
+      callsLink: string;
       revoke: string;
       revokeTitle: (name: string) => string;
       revokeBody: string;
@@ -328,26 +423,6 @@ export interface Copy {
         sentBody: string;
       };
     };
-    deliveries: {
-      title: string;
-      lede: string;
-      refresh: string;
-      columns: { time: string; kind: string; from: string; to: string; outcome: string; status: string; duration: string; details: string };
-      kinds: Record<PushDeliveryKind, string>;
-      outcomes: Record<PushDeliveryOutcome, string>;
-      searchPlaceholder: string;
-      nothingYet: string;
-    };
-    deliveryCard: {
-      title: (time: string) => string;
-      httpStatus: string;
-      attempts: string;
-      callId: string;
-      sipCallId: string;
-      url: string;
-      response: string;
-      error: string;
-    };
   };
   credentialsModal: {
     generatedPasswordWarning: string;
@@ -390,6 +465,7 @@ const en: Copy = {
   byline: 'by 84softworks',
   nav: {
     dashboard: 'Dashboard',
+    events: 'Events',
     sipAccounts: 'SIP numbers',
     consoleUsers: 'Console users',
     audit: 'Audit',
@@ -405,6 +481,7 @@ const en: Copy = {
     consoleUsers: { title: 'Console users', kicker: 'Who may log in here' },
     consoleUser: { title: 'Console user', kicker: 'Console user' },
     audit: { title: 'Audit', kicker: 'Who changed what, newest first' },
+    events: { title: 'Event log', kicker: 'What happens on the server, newest first' },
     integration: { title: 'Integration', kicker: 'The seam with the operator backend' },
     about: { title: 'ThunderVox Console', kicker: 'About and legal' },
     notFound: { title: 'Page not found', kicker: 'Nothing at this address' },
@@ -583,6 +660,7 @@ const en: Copy = {
     lastOnline: 'Last online',
     lastOffline: 'Went offline',
     neverRegistered: 'The number has never registered: no device has logged in with it yet.',
+    eventsLink: 'Events of the number',
   },
   consoleUsers: {
     newUser: 'New user',
@@ -622,6 +700,101 @@ const en: Copy = {
     accountSection: 'Account',
     source: 'Defined by',
     sourceConsole: 'The console',
+  },
+  events: {
+    filterAll: 'All',
+    categories: { REGISTRATION: 'Registrations', CALL: 'Calls', PUSH: 'Pushes', SERVICE_CALL: 'API' },
+    problemsOnly: 'Problems only',
+    live: 'updates by itself',
+    columns: { time: 'Time', event: 'Event', parties: 'Who', outcome: 'Outcome', details: 'Details' },
+    searchPlaceholder: 'Number, external id, call id, token, address – partial works',
+    nothingYet: 'Nothing has happened on the server yet.',
+    titles: {
+      online: 'Number online',
+      offline: 'Number offline',
+      call: 'Call',
+      pushLive: 'Wake push',
+      pushTest: 'Test push',
+      serviceCall: 'API call',
+    },
+    related: { number: 'All events of the number', call: 'All events of the call', backend: 'All calls of this backend' },
+    registration: {
+      states: { ONLINE: 'Online', OFFLINE: 'Offline' },
+      number: 'Number',
+      account: 'Account',
+      noAccount: 'no account in the console (an open core)',
+      userAgent: 'Device (User-Agent)',
+      received: 'Seen from',
+      contact: 'Contact',
+    },
+    call: {
+      from: 'From',
+      to: 'To',
+      mode: 'Path',
+      modes: { RELAY: 'straight to the devices', WAKE: 'through a wake push' },
+      outcomes: {
+        RINGING: 'In progress',
+        ANSWERED: 'Answered',
+        CANCELED: 'Canceled',
+        NO_ANSWER: 'No answer',
+        REJECTED: 'Declined',
+        FAILED: 'Failed',
+      },
+      started: 'Started',
+      answered: 'Answered',
+      ended: 'Ended',
+      talk: 'Talk',
+      endReason: 'How it ended',
+      endReasons: {
+        bye: 'hung up after the talk',
+        cancel: 'the caller hung up before an answer',
+        final: 'the callee side answered with a final code',
+        window: 'nobody woke within the wake window',
+      },
+      sipCallId: 'SIP Call-ID',
+    },
+    push: {
+      from: 'From',
+      to: 'To',
+      kinds: { LIVE: 'live', TEST: 'test' },
+      outcomes: { DELIVERED: 'Delivered', REJECTED: 'Rejected', FAILED: 'Failed', SKIPPED: 'Skipped' },
+      httpStatus: 'HTTP status',
+      attempts: 'Attempts',
+      callId: 'call_id',
+      sipCallId: 'sip_call_id',
+      url: 'URL',
+      response: 'Response',
+      error: 'Error',
+    },
+    serviceCall: {
+      backend: 'Backend',
+      callers: { UNKNOWN_TOKEN: 'unknown or revoked token', NO_TOKEN: 'no token' },
+      tokenPrefix: 'Token prefix',
+      operations: {
+        READ: 'number read',
+        ENSURE: 'number issued',
+        DISABLE: 'number disabled',
+        REGISTRATION: 'registration checked',
+        OTHER: 'unknown request',
+      },
+      request: 'Request',
+      endpoint: 'Endpoint',
+      number: 'Number',
+      httpStatus: 'HTTP status',
+      statuses: {
+        ok: 'OK',
+        refused: 'no access',
+        forbidden: 'not allowed',
+        notFound: 'not found',
+        badRequest: 'bad request',
+        serverError: 'server error',
+      },
+      remoteAddress: 'From address',
+      error: 'Error',
+    },
+    duration: 'Time, ms',
+    durationMs: (ms) => `${ms} ms`,
+    openNumber: 'Card of the number',
   },
   audit: {
     columns: { time: 'Time', who: 'Who', action: 'Action', details: 'Details' },
@@ -671,6 +844,7 @@ const en: Copy = {
       createdBy: 'Issued by',
       revokedAt: 'Revoked',
       cardNote: 'The token value is shown only when it is issued; the server keeps its hash.',
+      callsLink: 'Calls with this token',
       revoke: 'Revoke',
       revokeTitle: (name) => `Revoke the token "${name}"?`,
       revokeBody: 'The operator backend stops working with this token at once. Issue a new one and put it into the integration before revoking the old one.',
@@ -725,7 +899,7 @@ const en: Copy = {
       test: 'Test push',
       testModal: {
         title: 'Test push',
-        body: 'The same request a live call would send, to the URL above, right now. The result is recorded as TEST in the delivery log.',
+        body: 'The same request a live call would send, to the URL above, right now. The result goes to the event log as a test push.',
         caller: 'Calling panel',
         callee: 'Called subscriber',
         send: 'Send',
@@ -738,26 +912,6 @@ const en: Copy = {
         sentBody: 'Sent body',
       },
     },
-    deliveries: {
-      title: 'Delivery log',
-      lede: 'Every wake push, live calls and tests alike; rows are kept for a week.',
-      refresh: 'Refresh',
-      columns: { time: 'Time', kind: 'Kind', from: 'From', to: 'To', outcome: 'Outcome', status: 'HTTP', duration: 'Time, ms', details: 'Response / error' },
-      kinds: { LIVE: 'live', TEST: 'test' },
-      outcomes: { DELIVERED: 'Delivered', REJECTED: 'Rejected', FAILED: 'Failed', SKIPPED: 'Skipped' },
-      searchPlaceholder: 'Number, external id, call id, response - partial works',
-      nothingYet: 'No pushes yet.',
-    },
-    deliveryCard: {
-      title: (time) => `Wake push ${time}`,
-      httpStatus: 'HTTP status',
-      attempts: 'Attempts',
-      callId: 'call_id',
-      sipCallId: 'sip_call_id',
-      url: 'URL',
-      response: 'Response',
-      error: 'Error',
-    },
   },
   credentialsModal: {
     generatedPasswordWarning:
@@ -769,7 +923,7 @@ const en: Copy = {
   },
   about: {
     intro:
-      'Operator console of the ThunderVox SIP endpoint platform: SIP numbers of intercom panels and subscribers, who is registered right now, console users and the audit trail. ThunderVox is a product of 84softworks.',
+      'Operator console of the ThunderVox SIP endpoint platform: SIP numbers of intercom panels and subscribers, who is registered right now, the event log of the server, console users and the audit trail. ThunderVox is a product of 84softworks.',
     versions: 'Versions',
     console: 'Console',
     server: 'Server',
@@ -803,6 +957,7 @@ const ru: Copy = {
   byline: 'by 84softworks',
   nav: {
     dashboard: 'Обзор',
+    events: 'События',
     sipAccounts: 'SIP-номера',
     consoleUsers: 'Пользователи',
     audit: 'Журнал',
@@ -818,6 +973,7 @@ const ru: Copy = {
     consoleUsers: { title: 'Пользователи консоли', kicker: 'Кто может сюда войти' },
     consoleUser: { title: 'Пользователь консоли', kicker: 'Пользователь консоли' },
     audit: { title: 'Журнал действий', kicker: 'Кто что изменил, новые сверху' },
+    events: { title: 'Журнал событий', kicker: 'Что происходит на сервере, новые сверху' },
     integration: { title: 'Интеграция', kicker: 'Стык с бэкендом оператора' },
     about: { title: 'Консоль ThunderVox', kicker: 'О консоли и правовая информация' },
     notFound: { title: 'Страница не найдена', kicker: 'По этому адресу ничего нет' },
@@ -996,6 +1152,7 @@ const ru: Copy = {
     lastOnline: 'Был онлайн',
     lastOffline: 'Ушёл в офлайн',
     neverRegistered: 'Номер ни разу не регистрировался: с ним ещё не входило ни одно устройство.',
+    eventsLink: 'События номера',
   },
   consoleUsers: {
     newUser: 'Новый пользователь',
@@ -1035,6 +1192,101 @@ const ru: Copy = {
     accountSection: 'Учётная запись',
     source: 'Кем задан',
     sourceConsole: 'Консолью',
+  },
+  events: {
+    filterAll: 'Все',
+    categories: { REGISTRATION: 'Регистрации', CALL: 'Звонки', PUSH: 'Пуши', SERVICE_CALL: 'API' },
+    problemsOnly: 'Только сбои',
+    live: 'обновляется сам',
+    columns: { time: 'Время', event: 'Событие', parties: 'Кто', outcome: 'Итог', details: 'Подробности' },
+    searchPlaceholder: 'Номер, внешний id, call id, токен, адрес – можно частью',
+    nothingYet: 'На сервере ещё ничего не происходило.',
+    titles: {
+      online: 'Номер онлайн',
+      offline: 'Номер офлайн',
+      call: 'Звонок',
+      pushLive: 'Пробуждающий пуш',
+      pushTest: 'Тестовый пуш',
+      serviceCall: 'Вызов API',
+    },
+    related: { number: 'Все события номера', call: 'Все события звонка', backend: 'Все вызовы этого бэкенда' },
+    registration: {
+      states: { ONLINE: 'Онлайн', OFFLINE: 'Офлайн' },
+      number: 'Номер',
+      account: 'Учётная запись',
+      noAccount: 'в консоли не заведён (открытое ядро)',
+      userAgent: 'Устройство (User-Agent)',
+      received: 'Откуда виден',
+      contact: 'Contact',
+    },
+    call: {
+      from: 'Кто звонил',
+      to: 'Кому',
+      mode: 'Путь',
+      modes: { RELAY: 'сразу на устройства', WAKE: 'через пробуждающий пуш' },
+      outcomes: {
+        RINGING: 'Идёт',
+        ANSWERED: 'Отвечен',
+        CANCELED: 'Отменён',
+        NO_ANSWER: 'Без ответа',
+        REJECTED: 'Отклонён',
+        FAILED: 'Сбой',
+      },
+      started: 'Начало',
+      answered: 'Ответ',
+      ended: 'Конец',
+      talk: 'Разговор',
+      endReason: 'Чем кончился',
+      endReasons: {
+        bye: 'положили трубку после разговора',
+        cancel: 'звонящий сбросил до ответа',
+        final: 'сторона абонента ответила финальным кодом',
+        window: 'за окно пробуждения никто не проснулся',
+      },
+      sipCallId: 'SIP Call-ID',
+    },
+    push: {
+      from: 'От',
+      to: 'Кому',
+      kinds: { LIVE: 'звонок', TEST: 'тест' },
+      outcomes: { DELIVERED: 'Доставлен', REJECTED: 'Отклонён', FAILED: 'Не доставлен', SKIPPED: 'Пропущен' },
+      httpStatus: 'HTTP-статус',
+      attempts: 'Попыток',
+      callId: 'call_id',
+      sipCallId: 'sip_call_id',
+      url: 'URL',
+      response: 'Ответ',
+      error: 'Ошибка',
+    },
+    serviceCall: {
+      backend: 'Бэкенд',
+      callers: { UNKNOWN_TOKEN: 'неизвестный или отозванный токен', NO_TOKEN: 'без токена' },
+      tokenPrefix: 'Префикс токена',
+      operations: {
+        READ: 'запрос номера',
+        ENSURE: 'выдача номера',
+        DISABLE: 'снятие номера',
+        REGISTRATION: 'проверка регистрации',
+        OTHER: 'неизвестный запрос',
+      },
+      request: 'Запрос',
+      endpoint: 'Эндпоинт',
+      number: 'Номер',
+      httpStatus: 'HTTP-статус',
+      statuses: {
+        ok: 'успех',
+        refused: 'нет доступа',
+        forbidden: 'запрещено',
+        notFound: 'не найдено',
+        badRequest: 'ошибка запроса',
+        serverError: 'сбой сервера',
+      },
+      remoteAddress: 'С адреса',
+      error: 'Ошибка',
+    },
+    duration: 'Время, мс',
+    durationMs: (ms) => `${ms} мс`,
+    openNumber: 'Карточка номера',
   },
   audit: {
     columns: { time: 'Время', who: 'Кто', action: 'Действие', details: 'Подробности' },
@@ -1084,6 +1336,7 @@ const ru: Copy = {
       createdBy: 'Кто выпустил',
       revokedAt: 'Отозван',
       cardNote: 'Значение токена показывается только при выпуске; сервер хранит его хэш.',
+      callsLink: 'Вызовы с этим токеном',
       revoke: 'Отозвать',
       revokeTitle: (name) => `Отозвать токен «${name}»?`,
       revokeBody: 'Бэкенд оператора с этим токеном перестанет работать сразу. Сначала выпустите новый и впишите его в интеграцию, потом отзывайте старый.',
@@ -1138,7 +1391,7 @@ const ru: Copy = {
       test: 'Тестовый пуш',
       testModal: {
         title: 'Тестовый пуш',
-        body: 'Тот же запрос, что ушёл бы при живом звонке, на адрес выше, прямо сейчас. Результат попадает в журнал доставок как TEST.',
+        body: 'Тот же запрос, что ушёл бы при живом звонке, на адрес выше, прямо сейчас. Результат попадает в журнал событий как тестовый пуш.',
         caller: 'Звонящая панель',
         callee: 'Вызываемый абонент',
         send: 'Отправить',
@@ -1151,26 +1404,6 @@ const ru: Copy = {
         sentBody: 'Отправленное тело',
       },
     },
-    deliveries: {
-      title: 'Журнал доставок',
-      lede: 'Каждый пробуждающий пуш – живые звонки и тесты; строки хранятся неделю.',
-      refresh: 'Обновить',
-      columns: { time: 'Время', kind: 'Вид', from: 'От', to: 'Кому', outcome: 'Итог', status: 'HTTP', duration: 'Время, мс', details: 'Ответ / ошибка' },
-      kinds: { LIVE: 'звонок', TEST: 'тест' },
-      outcomes: { DELIVERED: 'Доставлен', REJECTED: 'Отклонён', FAILED: 'Не доставлен', SKIPPED: 'Пропущен' },
-      searchPlaceholder: 'Номер, внешний id, call id, ответ – можно частью',
-      nothingYet: 'Пушей ещё не было.',
-    },
-    deliveryCard: {
-      title: (time) => `Пробуждающий пуш ${time}`,
-      httpStatus: 'HTTP-статус',
-      attempts: 'Попыток',
-      callId: 'call_id',
-      sipCallId: 'sip_call_id',
-      url: 'URL',
-      response: 'Ответ',
-      error: 'Ошибка',
-    },
   },
   credentialsModal: {
     generatedPasswordWarning:
@@ -1182,7 +1415,7 @@ const ru: Copy = {
   },
   about: {
     intro:
-      'Операторская консоль SIP-платформы ThunderVox: SIP-номера домофонных панелей и абонентов, кто зарегистрирован прямо сейчас, пользователи консоли и журнал действий. ThunderVox – продукт 84softworks.',
+      'Операторская консоль SIP-платформы ThunderVox: SIP-номера домофонных панелей и абонентов, кто зарегистрирован прямо сейчас, журнал событий сервера, пользователи консоли и журнал действий. ThunderVox – продукт 84softworks.',
     versions: 'Версии',
     console: 'Консоль',
     server: 'Сервер',

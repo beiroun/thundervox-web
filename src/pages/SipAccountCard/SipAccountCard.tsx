@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Alert, Badge, Button, Group, Loader, Menu, Text } from '@mantine/core';
 import { IconKey, IconLock, IconLockOpen, IconPencil, IconTrash } from '@tabler/icons-react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 
 import { describeApiError } from '@/api/baseQuery';
 import {
@@ -28,7 +28,7 @@ import { sipCredentialFields } from '@/pages/SipAccounts/sipAccountCredentials';
 import { sipKindColors } from '@/pages/SipAccounts/sipKindColors';
 import { isNotFound } from '@/shared/apiErrors';
 import { mayChangeSipAccounts } from '@/shared/consoleRoles';
-import { routePaths } from '@/shared/navigation';
+import { eventsSearchPath, routePaths } from '@/shared/navigation';
 import { formatServerTime } from '@/shared/serverTime';
 import { useGoBack } from '@/shared/useGoBack';
 import { useAppSelector } from '@/store/store';
@@ -232,6 +232,11 @@ function SipAccountCardContent({ account, onBack }: { account: SipAccount; onBac
         ) : (
           <Text c="dimmed">{copy.neverRegistered}</Text>
         )}
+        <Text size="sm" mt="md">
+          <Link to={eventsSearchPath(account.username)} className="tvx-link">
+            {copy.eventsLink}
+          </Link>
+        </Text>
       </section>
 
       <EditSipAccountModal account={dialog === 'edit' ? account : null} onClose={closeDialog} />

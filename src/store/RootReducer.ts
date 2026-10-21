@@ -10,9 +10,19 @@ import { consoleUsersApi } from '@/api/consoleUsersApi';
 import { auditApi } from '@/api/auditApi';
 import { integrationApi } from '@/api/integrationApi';
 import { dashboardApi } from '@/api/dashboardApi';
+import { eventsApi } from '@/api/eventsApi';
 
 /** Every API slice of the console: reducers here, middleware in store.ts. */
-export const apiSlices = [platformApi, authApi, sipAccountsApi, consoleUsersApi, auditApi, integrationApi, dashboardApi] as const;
+export const apiSlices = [
+  platformApi,
+  authApi,
+  sipAccountsApi,
+  consoleUsersApi,
+  auditApi,
+  integrationApi,
+  dashboardApi,
+  eventsApi,
+] as const;
 
 const combinedReducer = combineReducers({
   [authSlice.reducerPath]: authSlice.reducer,
@@ -23,6 +33,7 @@ const combinedReducer = combineReducers({
   [auditApi.reducerPath]: auditApi.reducer,
   [integrationApi.reducerPath]: integrationApi.reducer,
   [dashboardApi.reducerPath]: dashboardApi.reducer,
+  [eventsApi.reducerPath]: eventsApi.reducer,
 });
 
 /**

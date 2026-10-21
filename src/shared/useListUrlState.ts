@@ -36,6 +36,11 @@ export interface ListUrlState {
   toggleSort: (key: string) => void;
   /** Clears the search and the filters; the page size and the sort stay, as the operator's way of reading. */
   reset: () => void;
+  /**
+   * Replaces the search and the filters at once (a link "everything about this number"): one change of the
+   * address, because two calls in a row would each start from the same old address and the second would win.
+   */
+  select: (query: string | undefined, filters?: Readonly<Record<string, string | undefined>>) => void;
 }
 
 const isPageSize = (value: number) => (pageSizes as readonly number[]).includes(value);
@@ -110,5 +115,15 @@ export function useListUrlState({ prefix = '', defaultSize = defaultPageSize, fi
     [filterKeys, patch],
   );
 
-  return { query, page, size, sort, filters, isFiltered, setQuery, setFilter, setPage, setSize, toggleSort, reset };
+  const select = useCallback(
+    (nextQuery: string | undefined, nextFilters: Readonly<Record<string, string | undefined>> = {}) =>
+      patch({
+        query: nextQuery,
+        page: undefined,
+        ...Object.fromEntries(filterKeys.map((key) => [key, nextFilters[key]])),
+      }),
+    [filterKeys, patch],
+  );
+
+  return { query, page, size, sort, filters, isFiltered, setQuery, setFilter, setPage, setSize, toggleSort, reset, select };
 }

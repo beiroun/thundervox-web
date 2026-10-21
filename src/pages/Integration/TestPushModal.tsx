@@ -8,7 +8,7 @@ import { useSendTestPushMutation } from '@/api/integrationApi';
 import { useListSipAccountsQuery } from '@/api/sipAccountsApi';
 import type { PushTestResult, SipAccount, SipAccountKind } from '@/api/types';
 import { useLang } from '@/i18n/LangContext';
-import { outcomeColor } from '@/pages/Integration/outcomeColor';
+import { pushOutcomeColor } from '@/pages/Events/eventColors';
 
 interface TestPushModalProps {
   opened: boolean;
@@ -75,8 +75,8 @@ export function TestPushModal({ opened, url, onClose }: TestPushModalProps) {
                 <Text size="sm" fw={500}>
                   {copy.result}
                 </Text>
-                <Badge color={outcomeColor(result.outcome)} variant="light">
-                  {t.integration.deliveries.outcomes[result.outcome]}
+                <Badge color={pushOutcomeColor(result.outcome)} variant="light">
+                  {t.events.push.outcomes[result.outcome]}
                 </Badge>
                 <Text size="sm" c="dimmed">
                   {copy.status}: {result.http_status ?? t.common.none} · {copy.duration(result.duration_ms)}

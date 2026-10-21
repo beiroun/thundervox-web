@@ -8,7 +8,6 @@ import type {
   IntegrationOverview,
   IssuedServiceToken,
   IssueServiceTokenRequest,
-  PushDeliveryPage,
   PushSettings,
   PushTestRequest,
   PushTestResult,
@@ -16,11 +15,11 @@ import type {
   UpdatePushSettingsRequest,
 } from '@/api/types';
 
-/** The Integration page: service tokens, wake push settings, test pushes and the delivery log. */
+/** The Integration page: service tokens, wake push settings and test pushes (their outcome is in the event log). */
 export const integrationApi = createApi({
   reducerPath: 'integrationApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Integration', 'ServiceToken', 'PushDelivery'],
+  tagTypes: ['Integration', 'ServiceToken'],
   endpoints: (builder) => ({
     getIntegration: builder.query<IntegrationOverview, void>({
       query: () => '/integration',
@@ -35,13 +34,6 @@ export const integrationApi = createApi({
     sendTestPush: builder.mutation<PushTestResult, PushTestRequest>({
       query: (body) => ({ url: '/integration/push/test', method: 'POST', body }),
       transformResponse: (response: BaseApiResponse<PushTestResult>) => unwrapEnvelope(response),
-      invalidatesTags: ['PushDelivery'],
-    }),
-    /** `query` – the smart search, applied by the server; absent when the typed text would not search. */
-    getPushDeliveries: builder.query<PushDeliveryPage, { page: number; size: number; query?: string }>({
-      query: ({ page, size, query }) => ({ url: '/integration/push/deliveries', params: { page, size, query } }),
-      transformResponse: (response: BaseApiResponse<PushDeliveryPage>) => unwrapEnvelope(response),
-      providesTags: ['PushDelivery'],
     }),
     listServiceTokens: builder.query<ServiceToken[], void>({
       query: () => '/integration/tokens',
@@ -65,7 +57,6 @@ export const {
   useGetIntegrationQuery,
   useUpdatePushSettingsMutation,
   useSendTestPushMutation,
-  useGetPushDeliveriesQuery,
   useListServiceTokensQuery,
   useIssueServiceTokenMutation,
   useRevokeServiceTokenMutation,

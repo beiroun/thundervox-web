@@ -286,16 +286,70 @@ export interface PushTestResult {
   sent_body: string;
 }
 
-export interface PushDelivery {
+// ---- Event log ----
+
+/** The journals the event log is made of; also its `category` filter. */
+export type ServerEventCategory = 'REGISTRATION' | 'CALL' | 'PUSH' | 'SERVICE_CALL';
+
+/** The SIP account behind a number, when the number has one. */
+export interface EventSipAccount {
   id: number;
-  created_at: string;
+  kind: SipAccountKind;
+  name: string;
+  external_id: string | null;
+}
+
+export type RegistrationEventKind = 'ONLINE' | 'OFFLINE';
+
+export interface RegistrationEvent {
+  username: string;
+  kind: RegistrationEventKind;
+  /** ONLINE only: the device that came up. */
+  contact: string | null;
+  received: string | null;
+  user_agent: string | null;
+  account: EventSipAccount | null;
+}
+
+/** How the core handled the call: rang the registered devices, or parked it and asked for a wake push. */
+export type CallMode = 'RELAY' | 'WAKE';
+
+/** RINGING until the core reports the end of the call. */
+export type CallOutcome = 'RINGING' | 'ANSWERED' | 'CANCELED' | 'NO_ANSWER' | 'REJECTED' | 'FAILED';
+
+/** One call, followed from its start to its end. */
+export interface CallEvent {
+  sip_call_id: string;
+  mode: CallMode | null;
+  caller_number: string | null;
+  caller_external_id: string | null;
+  caller_name: string | null;
+  caller_account_id: number | null;
+  callee_number: string | null;
+  callee_external_id: string | null;
+  callee_name: string | null;
+  callee_account_id: number | null;
+  started_at: string;
+  answered_at: string | null;
+  ended_at: string | null;
+  /** bye | cancel | final | window */
+  end_reason: string | null;
+  /** The final SIP code the caller got. */
+  end_code: number | null;
+  outcome: CallOutcome;
+}
+
+/** One wake push to the operator's backend and what came of it. */
+export interface PushDelivery {
   call_id: string;
   sip_call_id: string | null;
   kind: PushDeliveryKind;
   caller_number: string | null;
   caller_external_id: string | null;
+  caller_account_id: number | null;
   callee_number: string | null;
   callee_external_id: string | null;
+  callee_account_id: number | null;
   url: string | null;
   outcome: PushDeliveryOutcome;
   http_status: number | null;
@@ -305,9 +359,53 @@ export interface PushDelivery {
   error: string | null;
 }
 
-export interface PushDeliveryPage {
-  items: PushDelivery[];
+/** TOKEN: a live token; UNKNOWN_TOKEN: wrong or revoked; NO_TOKEN: no X-SERVICE-TOKEN header. */
+export type ServiceCallerAuth = 'TOKEN' | 'UNKNOWN_TOKEN' | 'NO_TOKEN';
+
+export type ServiceCallOperation = 'READ' | 'ENSURE' | 'DISABLE' | 'REGISTRATION' | 'OTHER';
+
+/** One call of an operator's backend to the service API. */
+export interface ServiceCall {
+  caller_auth: ServiceCallerAuth;
+  /** The backend: the live token it presented. */
+  token_id: number | null;
+  token_name: string | null;
+  /** First characters of a presented token-shaped value, a revoked token included. */
+  token_prefix: string | null;
+  method: string;
+  path: string;
+  operation: ServiceCallOperation;
+  sip_kind: string | null;
+  external_id: string | null;
+  /** The number of the endpoint, when it has one. */
+  username: string | null;
+  account_id: number | null;
+  http_status: number;
+  duration_ms: number;
+  remote_address: string | null;
+  /** The error a refused or failed call got; never anything of a success. */
+  error: string | null;
+}
+
+/** One line of the event log: exactly the body of its category is set. */
+export interface ServerEvent {
+  /** Unique across the whole log; `id` is unique only inside its journal. */
+  key: string;
+  category: ServerEventCategory;
+  id: number;
+  occurred_at: string;
+  registration: RegistrationEvent | null;
+  call: CallEvent | null;
+  push: PushDelivery | null;
+  service_call: ServiceCall | null;
+}
+
+/** GET /events */
+export interface ServerEventPage {
+  items: ServerEvent[];
   total: number;
   page: number;
   size: number;
+  /** What this console user may see: readers get registrations and calls only. */
+  categories: ServerEventCategory[];
 }

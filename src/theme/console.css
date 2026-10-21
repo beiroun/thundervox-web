@@ -567,6 +567,13 @@ h3 {
   border-color: var(--tvx-accent-ink);
 }
 
+/* The journal's icon before a line of the event log: ash like the navigation's resting icons, on the first line */
+.tvx-event__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--tvx-ash);
+}
+
 /* The phone: Mantine's `sm`, the width the shell switches the column to a sheet at */
 @media (max-width: 47.99em) {
   .tvx-byline {

@@ -28,10 +28,15 @@ import type {
   LoginRequest,
   LoginResponse,
   PlatformInfo,
+  CallEvent,
   PushDelivery,
-  PushDeliveryPage,
   PushSettings,
   PushTestResult,
+  RegistrationEvent,
+  ServerEvent,
+  ServerEventCategory,
+  ServerEventPage,
+  ServiceCall,
   ServiceToken,
   SipAccount,
   SipAccountCredentials,
@@ -83,14 +88,15 @@ interface MockState {
   audit: AuditEntry[];
   tokens: ServiceToken[];
   push: MockPushSettings;
-  deliveries: PushDelivery[];
+  /** The event log, oldest first, as the journals would have written it. */
+  events: ServerEvent[];
   /** Bearer token -> login; dropped on password reset, as the real server invalidates the tokens. */
   sessions: Map<string, string>;
   nextUserId: number;
   nextAccountId: number;
   nextAuditId: number;
   nextTokenId: number;
-  nextDeliveryId: number;
+  nextEventId: number;
 }
 
 // ---- Time and tokens ----
@@ -308,12 +314,29 @@ function createState(): MockState {
     updated_by: 'admin',
   };
 
-  const deliveries: PushDelivery[] = [
-    delivery(1, minutesAgo(50), 'LIVE', '20000001', '178.74.67.30:5060', '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 142, '{"call_id":"…","caller_id":"178.74.67.30:5060","callee_id":"0001234567"}', null),
-    delivery(2, minutesAgo(35), 'LIVE', '20000002', '178.74.67.31:5060', '10000002', '0001234568', push.url, 'FAILED', null, 2, 4012, null, 'I/O error on POST request: connect timed out'),
-    delivery(3, minutesAgo(20), 'TEST', '20000001', '178.74.67.30:5060', '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 98, '{"call_id":"…"}', null),
-    delivery(4, minutesAgo(8), 'LIVE', '20000003', null, '10000002', '0001234568', push.url, 'REJECTED', 400, 1, 77, '{"message":"caller_id must not be blank"}', null),
-  ];
+  // One evening on the stand: the panels and an app come up, two calls through a wake push (one answered, one
+  // never woke), a direct call the caller dropped, the operator backend provisioning, one backend on a revoked token
+  const panel = '178.74.67.30:5060';
+  const sipCallA = 'a84b4c76e66710@178.74.67.30';
+  const sipCallB = '3f9c2e1d7b40@178.74.67.31';
+  const sipCallC = '77aa01c3d2@178.74.67.30';
+  const events: ServerEvent[] = [
+    registrationEvent(minutesAgo(70), '20000001', 'ONLINE', 'sip:20000001@178.74.67.30:5060', panel, 'Beward DKS15122 v3.2.6'),
+    registrationEvent(minutesAgo(68), '20000002', 'ONLINE', 'sip:20000002@178.74.67.31:5060', '178.74.67.31:5060', 'Beward DKS15122 v3.2.6'),
+    serviceCallEvent(minutesAgo(61), 'TOKEN', 'PUT', '/service/sip-accounts/CLIENT/0001234567', 'ENSURE', '10000001', 200, 38, null),
+    serviceCallEvent(minutesAgo(52), 'TOKEN', 'GET', '/service/sip-accounts/CLIENT/0001234567/registration', 'REGISTRATION', '10000001', 200, 11, null),
+    callEvent(minutesAgo(50), sipCallA, 'WAKE', '20000001', '10000001', 'ANSWERED', 0.1, 0.9, 'bye', 200),
+    pushEvent(minutesAgo(50), sipCallA, 'LIVE', '20000001', panel, '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 142, '{"call_id":"…","caller_id":"178.74.67.30:5060","callee_id":"0001234567"}', null),
+    registrationEvent(minutesAgo(49.9), '10000001', 'ONLINE', 'sip:10000001@10.20.30.40:51234;transport=tcp', '95.167.20.11:51234', 'Modus iOS 4.12 (linphone)'),
+    registrationEvent(minutesAgo(48), '10000001', 'OFFLINE', null, null, null),
+    callEvent(minutesAgo(35), sipCallB, 'WAKE', '20000002', '10000002', 'NO_ANSWER', null, 1.5, 'window', 480),
+    pushEvent(minutesAgo(35), sipCallB, 'LIVE', '20000002', '178.74.67.31:5060', '10000002', '0001234568', push.url, 'FAILED', null, 2, 4012, null, 'I/O error on POST request: connect timed out'),
+    serviceCallEvent(minutesAgo(26), 'UNKNOWN_TOKEN', 'PUT', '/service/sip-accounts/CLIENT/0001234569', 'ENSURE', null, 401, 3, 'Unknown or revoked service token'),
+    pushEvent(minutesAgo(20), 'test-1760000000', 'TEST', '20000001', panel, '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 98, '{"call_id":"…"}', null),
+    callEvent(minutesAgo(12), sipCallC, 'RELAY', '20000001', '10000002', 'CANCELED', null, 0.3, 'cancel', 487),
+    serviceCallEvent(minutesAgo(9), 'TOKEN', 'GET', '/service/sip-accounts/PANEL/178.74.67.99:5060', 'READ', null, 410, 7, 'No PANEL number with external id 178.74.67.99:5060'),
+    serviceCallEvent(minutesAgo(3), 'TOKEN', 'PUT', '/service/sip-accounts/CLIENT/0001234568', 'ENSURE', '10000002', 200, 21, null),
+  ].map((event, index) => ({ ...event, id: index + 1, key: `${event.category.toLowerCase()}-${index + 1}` }));
 
   return {
     users,
@@ -321,19 +344,88 @@ function createState(): MockState {
     audit,
     tokens,
     push,
-    deliveries,
+    events,
     sessions: new Map(),
     nextUserId: 5,
     nextAccountId: 6,
     nextAuditId: 11,
     nextTokenId: 3,
-    nextDeliveryId: 5,
+    nextEventId: events.length + 1,
   };
 }
 
-function delivery(
-  id: number,
+/** A line of the log before its id: the sample list numbers them in order. */
+type UnnumberedEvent = Omit<ServerEvent, 'id' | 'key'>;
+
+function emptyEvent(category: ServerEventCategory, occurredAt: string): UnnumberedEvent {
+  return { category, occurred_at: occurredAt, registration: null, call: null, push: null, service_call: null };
+}
+
+const sampleAccounts: Record<string, { id: number; kind: SipAccountKind; name: string; external_id: string | null }> = {
+  '20000001': { id: 1, kind: 'PANEL', name: 'Маяковского, 14 – подъезд 1', external_id: '178.74.67.30:5060' },
+  '20000002': { id: 2, kind: 'PANEL', name: 'Маяковского, 14 – подъезд 2', external_id: '178.74.67.31:5060' },
+  '10000001': { id: 3, kind: 'CLIENT', name: 'Иванов И. И.', external_id: '0001234567' },
+  '10000002': { id: 4, kind: 'CLIENT', name: 'Петрова А. С.', external_id: '0001234568' },
+};
+
+function registrationEvent(
+  occurredAt: string,
+  username: string,
+  kind: RegistrationEvent['kind'],
+  contact: string | null,
+  received: string | null,
+  userAgent: string | null,
+): UnnumberedEvent {
+  const account = sampleAccounts[username] ?? null;
+  return {
+    ...emptyEvent('REGISTRATION', occurredAt),
+    registration: { username, kind, contact, received, user_agent: userAgent, account },
+  };
+}
+
+/** [answeredAfterMinutes] and [endedAfterMinutes] count from the start; null = never answered. */
+function callEvent(
+  startedAt: string,
+  sipCallId: string,
+  mode: CallEvent['mode'],
+  callerNumber: string,
+  calleeNumber: string,
+  outcome: CallEvent['outcome'],
+  answeredAfterMinutes: number | null,
+  endedAfterMinutes: number | null,
+  endReason: string | null,
+  endCode: number | null,
+): UnnumberedEvent {
+  const startMs = Date.parse(startedAt.slice(0, 23));
+  const after = (minutes: number | null) => (minutes === null ? null : serverTime(new Date(startMs + minutes * 60_000)));
+  const caller = sampleAccounts[callerNumber];
+  const callee = sampleAccounts[calleeNumber];
+  return {
+    ...emptyEvent('CALL', startedAt),
+    call: {
+      sip_call_id: sipCallId,
+      mode,
+      caller_number: callerNumber,
+      caller_external_id: caller?.external_id ?? null,
+      caller_name: caller?.name ?? null,
+      caller_account_id: caller?.id ?? null,
+      callee_number: calleeNumber,
+      callee_external_id: callee?.external_id ?? null,
+      callee_name: callee?.name ?? null,
+      callee_account_id: callee?.id ?? null,
+      started_at: startedAt,
+      answered_at: after(answeredAfterMinutes),
+      ended_at: after(endedAfterMinutes),
+      end_reason: endReason,
+      end_code: endCode,
+      outcome,
+    },
+  };
+}
+
+function pushEvent(
   createdAt: string,
+  sipCallId: string | null,
   kind: PushDelivery['kind'],
   callerNumber: string | null,
   callerExternalId: string | null,
@@ -346,24 +438,62 @@ function delivery(
   durationMs: number,
   responseExcerpt: string | null,
   error: string | null,
-): PushDelivery {
+): UnnumberedEvent {
   return {
-    id,
-    created_at: createdAt,
-    call_id: crypto.randomUUID(),
-    sip_call_id: `${Math.random().toString(16).slice(2)}@178.74.67.30`,
-    kind,
-    caller_number: callerNumber,
-    caller_external_id: callerExternalId,
-    callee_number: calleeNumber,
-    callee_external_id: calleeExternalId,
-    url,
-    outcome,
-    http_status: httpStatus,
-    attempts,
-    duration_ms: durationMs,
-    response_excerpt: responseExcerpt,
-    error,
+    ...emptyEvent('PUSH', createdAt),
+    push: {
+      call_id: crypto.randomUUID(),
+      sip_call_id: sipCallId,
+      kind,
+      caller_number: callerNumber,
+      caller_external_id: callerExternalId,
+      caller_account_id: callerNumber ? (sampleAccounts[callerNumber]?.id ?? null) : null,
+      callee_number: calleeNumber,
+      callee_external_id: calleeExternalId,
+      callee_account_id: calleeNumber ? (sampleAccounts[calleeNumber]?.id ?? null) : null,
+      url,
+      outcome,
+      http_status: httpStatus,
+      attempts,
+      duration_ms: durationMs,
+      response_excerpt: responseExcerpt,
+      error,
+    },
+  };
+}
+
+function serviceCallEvent(
+  occurredAt: string,
+  callerAuth: ServiceCall['caller_auth'],
+  method: string,
+  path: string,
+  operation: ServiceCall['operation'],
+  username: string | null,
+  httpStatus: number,
+  durationMs: number,
+  error: string | null,
+): UnnumberedEvent {
+  const [, , , kind = null, externalId = null] = path.split('/');
+  const live = callerAuth === 'TOKEN';
+  return {
+    ...emptyEvent('SERVICE_CALL', occurredAt),
+    service_call: {
+      caller_auth: callerAuth,
+      token_id: live ? 1 : null,
+      token_name: live ? 'modus tv-sip' : null,
+      token_prefix: live ? 'tvx_3kQ9mZpa' : 'tvx_H7wLs0Qe',
+      method,
+      path,
+      operation,
+      sip_kind: kind,
+      external_id: externalId,
+      username,
+      account_id: username ? (sampleAccounts[username]?.id ?? null) : null,
+      http_status: httpStatus,
+      duration_ms: durationMs,
+      remote_address: '95.167.20.2',
+      error,
+    },
   };
 }
 
@@ -828,56 +958,29 @@ const routes: Route[] = [
         error: unreachable ? 'I/O error on POST request: connect timed out' : null,
         sent_body: JSON.stringify(sentBody),
       };
-      state.deliveries.push({
-        id: state.nextDeliveryId++,
-        created_at: serverTime(),
-        call_id: callId,
-        sip_call_id: sentBody.sip_call_id,
-        kind: 'TEST',
-        caller_number: caller.username,
-        caller_external_id: caller.external_id,
-        callee_number: callee.username,
-        callee_external_id: callee.external_id,
-        url: state.push.url,
-        outcome: result.outcome,
-        http_status: result.http_status,
-        attempts: result.attempts,
-        duration_ms: result.duration_ms,
-        response_excerpt: result.response_excerpt,
-        error: result.error,
+      const id = state.nextEventId++;
+      state.events.push({
+        ...pushEvent(
+          serverTime(),
+          null,
+          'TEST',
+          caller.username,
+          caller.external_id,
+          callee.username,
+          callee.external_id,
+          state.push.url,
+          result.outcome,
+          result.http_status,
+          result.attempts,
+          result.duration_ms,
+          result.response_excerpt,
+          result.error,
+        ),
+        id,
+        key: `push-${id}`,
       });
       record(state, actor, 'PUSH_TEST_SENT', 'PUSH_SETTINGS', 1, { url: state.push.url, call_id: callId, outcome: result.outcome, http_status: result.http_status });
       return result;
-    },
-  },
-  {
-    method: 'GET',
-    pattern: /^\/integration\/push\/deliveries$/,
-    handle: ({ state, actor, query }): PushDeliveryPage => {
-      requireAdministrator(actor);
-      const page = Math.max(0, Number(query.get('page') ?? 0));
-      const size = Math.min(200, Math.max(1, Number(query.get('size') ?? 50)));
-      const found = smartSearch(
-        [...state.deliveries].reverse(),
-        query.get('query'),
-        (delivery) =>
-          smartSearchDocument(
-            delivery.call_id,
-            delivery.sip_call_id,
-            delivery.kind,
-            delivery.caller_number,
-            delivery.caller_external_id,
-            delivery.callee_number,
-            delivery.callee_external_id,
-            delivery.url,
-            delivery.outcome,
-            delivery.http_status,
-            delivery.response_excerpt,
-            delivery.error,
-          ),
-        (delivery) => [delivery.caller_number, delivery.callee_number, delivery.call_id, delivery.sip_call_id],
-      );
-      return { items: found.slice(page * size, page * size + size), total: found.length, page, size };
     },
   },
   {
@@ -944,6 +1047,27 @@ const routes: Route[] = [
   // ---- Audit ----
   {
     method: 'GET',
+    pattern: /^\/events$/,
+    handle: ({ state, actor, query }): ServerEventPage => {
+      const categories: ServerEventCategory[] =
+        actor.role === 'READER' ? ['REGISTRATION', 'CALL'] : ['REGISTRATION', 'CALL', 'PUSH', 'SERVICE_CALL'];
+      const requested = query.get('category') as ServerEventCategory | null;
+      if (requested && !categories.includes(requested)) {
+        throw new ApiFailure(insufficientPrivilegesStatus, `Role ${actor.role} may not read ${requested} events`, 'Недостаточно прав для этого действия');
+      }
+      const problemsOnly = query.get('problems') === 'true';
+      const page = Math.max(0, Number(query.get('page') ?? 0));
+      const size = Math.min(200, Math.max(1, Number(query.get('size') ?? 50)));
+      const shown = [...state.events]
+        .filter((event) => (requested ? event.category === requested : categories.includes(event.category)))
+        .filter((event) => !problemsOnly || isProblem(event))
+        .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
+      const found = smartSearch(shown, query.get('query'), eventDocument, eventExactKeys);
+      return { items: found.slice(page * size, page * size + size), total: found.length, page, size, categories };
+    },
+  },
+  {
+    method: 'GET',
     pattern: /^\/audit$/,
     handle: ({ state, query }): AuditPage => {
       const page = Math.max(0, Number(query.get('page') ?? 0));
@@ -975,6 +1099,51 @@ const routes: Route[] = [
  * The server's smart search over a journal (SmartQuery.kt): the same parsing and refusals as the console's own,
  * matching rows newest first with the exact key hits on top.
  */
+/** What did not get through, as the server's journals define it. */
+function isProblem(event: ServerEvent): boolean {
+  if (event.call) {
+    return event.call.outcome === 'NO_ANSWER' || event.call.outcome === 'FAILED';
+  }
+  if (event.push) {
+    return event.push.outcome !== 'DELIVERED';
+  }
+  if (event.service_call) {
+    return event.service_call.http_status >= 400;
+  }
+  return false;
+}
+
+function eventDocument(event: ServerEvent): string {
+  const { registration, call, push, service_call: serviceCall } = event;
+  if (registration) {
+    return smartSearchDocument(registration.username, registration.kind, registration.contact, registration.received, registration.user_agent, registration.account?.name, registration.account?.external_id);
+  }
+  if (call) {
+    return smartSearchDocument(call.sip_call_id, call.mode, call.caller_number, call.caller_external_id, call.caller_name, call.callee_number, call.callee_external_id, call.callee_name, call.outcome, call.end_reason, call.end_code);
+  }
+  if (push) {
+    return smartSearchDocument(push.call_id, push.sip_call_id, push.kind, push.caller_number, push.caller_external_id, push.callee_number, push.callee_external_id, push.url, push.outcome, push.http_status, push.response_excerpt, push.error);
+  }
+  if (serviceCall) {
+    return smartSearchDocument(serviceCall.token_name, serviceCall.token_prefix, serviceCall.caller_auth, serviceCall.method, serviceCall.path, serviceCall.operation, serviceCall.sip_kind, serviceCall.external_id, serviceCall.username, serviceCall.http_status, serviceCall.remote_address, serviceCall.error);
+  }
+  return '';
+}
+
+function eventExactKeys(event: ServerEvent): (string | null | undefined)[] {
+  const { registration, call, push, service_call: serviceCall } = event;
+  if (registration) {
+    return [registration.username, registration.account?.external_id];
+  }
+  if (call) {
+    return [call.caller_number, call.callee_number, call.sip_call_id, call.caller_external_id, call.callee_external_id];
+  }
+  if (push) {
+    return [push.caller_number, push.callee_number, push.call_id, push.sip_call_id, push.callee_external_id];
+  }
+  return [serviceCall?.username, serviceCall?.external_id, serviceCall?.token_name];
+}
+
 function smartSearch<Row>(
   rows: Row[],
   rawQuery: string | null,

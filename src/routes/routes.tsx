@@ -9,6 +9,7 @@ import { Audit } from '@/pages/Audit/Audit';
 import { ConsoleUserCard } from '@/pages/ConsoleUserCard/ConsoleUserCard';
 import { ConsoleUsers } from '@/pages/ConsoleUsers/ConsoleUsers';
 import { Dashboard } from '@/pages/Dashboard/Dashboard';
+import { Events } from '@/pages/Events/Events';
 import { Integration } from '@/pages/Integration/Integration';
 import { Login } from '@/pages/Login/Login';
 import { NotFound } from '@/pages/NotFound/NotFound';
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Dashboard />, handle: pageHandle('dashboard') },
+      { path: routePaths.events, element: <Events />, handle: pageHandle('events') },
       { path: routePaths.sipAccounts, element: <SipAccounts />, handle: pageHandle('sipAccounts') },
       { path: sipAccountPath(':id'), element: <SipAccountCard />, handle: pageHandle('sipAccount') },
       { path: routePaths.consoleUsers, element: <ConsoleUsers />, handle: pageHandle('consoleUsers') },

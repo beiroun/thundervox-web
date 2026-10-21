@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Alert, Button, Group, Menu, Modal, Stack, Text } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
+import { Link } from 'react-router';
 
 import { describeApiError } from '@/api/baseQuery';
 import { useRevokeServiceTokenMutation } from '@/api/integrationApi';
@@ -11,6 +12,7 @@ import { CardField, CardFields, CopyableValue } from '@/components/EntityCard/Ca
 import { EntityActionsMenu } from '@/components/EntityCard/EntityActionsMenu';
 import { useLang } from '@/i18n/LangContext';
 import { ServiceTokenStatusBadge } from '@/pages/Integration/ServiceTokenStatusBadge';
+import { eventsSearchPath } from '@/shared/navigation';
 import { formatServerTime } from '@/shared/serverTime';
 import { useIsPhone } from '@/shared/useIsPhone';
 
@@ -101,6 +103,11 @@ function ServiceTokenCard({ token, mayChange }: { token: ServiceToken; mayChange
         </CardField>
         <CardField label={copy.revokedAt}>{token.revoked_at ? formatServerTime(token.revoked_at) : null}</CardField>
       </CardFields>
+      <div>
+        <Link to={eventsSearchPath(token.name, 'SERVICE_CALL')} className="tvx-link">
+          {copy.callsLink}
+        </Link>
+      </div>
       <Text size="sm" c="dimmed">
         {copy.cardNote}
       </Text>
