@@ -314,7 +314,7 @@ function createState(): MockState {
     updated_by: 'admin',
   };
 
-  // One evening on the stand: the panels and an app come up, two calls through a wake push (one answered, one
+  // One evening on the stand (the registration journal keeps panels only): the panels come up, two calls through a wake push (one answered, one
   // never woke), a direct call the caller dropped, the operator backend provisioning, one backend on a revoked token
   const panel = '178.74.67.30:5060';
   const sipCallA = 'a84b4c76e66710@178.74.67.30';
@@ -327,8 +327,6 @@ function createState(): MockState {
     serviceCallEvent(minutesAgo(52), 'TOKEN', 'GET', '/service/sip-accounts/CLIENT/0001234567/registration', 'REGISTRATION', '10000001', 200, 11, null),
     callEvent(minutesAgo(50), sipCallA, 'WAKE', '20000001', '10000001', 'ANSWERED', 0.1, 0.9, 'bye', 200, 0.07),
     pushEvent(minutesAgo(50), sipCallA, 'LIVE', '20000001', panel, '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 142, '{"call_id":"…","caller_id":"178.74.67.30:5060","callee_id":"0001234567"}', null),
-    registrationEvent(minutesAgo(49.9), '10000001', 'ONLINE', 'sip:10000001@10.20.30.40:51234;transport=tcp', '95.167.20.11:51234', 'Modus iOS 4.12 (linphone)'),
-    registrationEvent(minutesAgo(48), '10000001', 'OFFLINE', null, null, null),
     callEvent(minutesAgo(35), sipCallB, 'WAKE', '20000002', '10000002', 'NO_ANSWER', null, 1.5, 'window', 480, null),
     registrationEvent(minutesAgo(30), '20000002', 'OFFLINE', null, null, null),
     pushEvent(minutesAgo(35), sipCallB, 'LIVE', '20000002', '178.74.67.31:5060', '10000002', '0001234568', push.url, 'FAILED', null, 2, 4012, null, 'I/O error on POST request: connect timed out'),
@@ -1060,14 +1058,11 @@ const routes: Route[] = [
       }
       const problemsOnly = query.get('problems') === 'true';
       const rawQuery = query.get('query');
-      // As the server: in the mixed log without a search only panels' registrations come along
-      const panelsOnly = !requested && !rawQuery?.trim();
       const page = Math.max(0, Number(query.get('page') ?? 0));
       const size = Math.min(200, Math.max(1, Number(query.get('size') ?? 50)));
       const shown = [...state.events]
         .filter((event) => (requested ? event.category === requested : categories.includes(event.category)))
         .filter((event) => !problemsOnly || isProblem(event))
-        .filter((event) => !panelsOnly || !event.registration || event.registration.account?.kind === 'PANEL')
         .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
       const found = smartSearch(shown, rawQuery, eventDocument, eventExactKeys);
       return { items: found.slice(page * size, page * size + size), total: found.length, page, size, categories };

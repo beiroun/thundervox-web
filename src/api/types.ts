@@ -338,8 +338,8 @@ export interface CallEvent {
   end_code: number | null;
   outcome: CallOutcome;
   /**
-   * WAKE only: when the callee's number came online after the call started – the wake push worked. Null while
-   * nobody has registered, and also when the number was already online and only re-registered.
+   * WAKE only: when the callee came online, or registered a new device, while the call waited – the wake push
+   * worked. Null while nobody has registered. Subscribers' registrations are not journaled otherwise.
    */
   callee_registered_at: string | null;
 }

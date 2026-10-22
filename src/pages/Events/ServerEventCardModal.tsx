@@ -156,8 +156,8 @@ function CallCard({ call }: { call: CallEvent }) {
 }
 
 /**
- * Whether the wake push reached the phone: the callee's number came online while its call waited. The journal
- * keeps transitions, so a number that was already online and only re-registered shows no time here.
+ * Whether the wake push reached the phone: the callee came online, or registered a new device, while its call
+ * waited – the server notes it on the call (subscribers' registrations are not journaled on their own).
  */
 function CalleeRegistration({ call }: { call: CallEvent }) {
   const { t } = useLang();
