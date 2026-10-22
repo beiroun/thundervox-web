@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
-import type { CallOutcome, PushDeliveryOutcome, RegistrationEventKind } from '@/api/types';
+import type { CallOutcome, PushDeliveryOutcome, RegistrationEventKind, SipAccountKind } from '@/api/types';
 import type { Copy } from '@/i18n/dict';
 
-/** Badge colour of a registration: online green, offline grey – going offline is a phone's normal life. */
-export function registrationColor(kind: RegistrationEventKind): string {
-  return kind === 'ONLINE' ? 'teal' : 'gray';
+/**
+ * Badge colour of a registration: online green; a panel gone offline red – the intercom cannot call; any other
+ * number offline grey – that is a phone's normal life.
+ */
+export function registrationColor(kind: RegistrationEventKind, accountKind: SipAccountKind | undefined): string {
+  if (kind === 'ONLINE') {
+    return 'teal';
+  }
+  return accountKind === 'PANEL' ? 'red' : 'gray';
 }
 
 /**

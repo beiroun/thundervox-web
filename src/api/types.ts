@@ -337,6 +337,11 @@ export interface CallEvent {
   /** The final SIP code the caller got. */
   end_code: number | null;
   outcome: CallOutcome;
+  /**
+   * WAKE only: when the callee's number came online after the call started – the wake push worked. Null while
+   * nobody has registered, and also when the number was already online and only re-registered.
+   */
+  callee_registered_at: string | null;
 }
 
 /** One wake push to the operator's backend and what came of it. */

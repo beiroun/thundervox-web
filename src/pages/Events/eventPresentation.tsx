@@ -52,6 +52,11 @@ export function callTalkSeconds(call: CallEvent): number | null {
   return call.answered_at ? serverTimeSecondsBetween(call.answered_at, call.ended_at) : null;
 }
 
+/** From the start of a call through a wake push to the callee's registration; null when it did not register. */
+export function callWakeSeconds(call: CallEvent): number | null {
+  return call.mode === 'WAKE' ? serverTimeSecondsBetween(call.started_at, call.callee_registered_at) : null;
+}
+
 /** The outcome of a line as a badge, in the colour of its journal's vocabulary. */
 export function EventOutcomeBadge({ event }: { event: ServerEvent }) {
   const { t } = useLang();
@@ -59,7 +64,7 @@ export function EventOutcomeBadge({ event }: { event: ServerEvent }) {
 
   if (event.registration) {
     return (
-      <Badge color={registrationColor(event.registration.kind)} variant="light">
+      <Badge color={registrationColor(event.registration.kind, event.registration.account?.kind)} variant="light">
         {copy.registration.states[event.registration.kind]}
       </Badge>
     );
@@ -181,7 +186,9 @@ export function EventDetailsCell({ event }: { event: ServerEvent }) {
   if (event.call) {
     const call = event.call;
     const talk = callTalkSeconds(call);
+    const wake = callWakeSeconds(call);
     const parts = [
+      wake !== null ? copy.call.wokeAfter(wake) : null,
       talk !== null ? `${copy.call.talk} ${formatSpan(talk)}` : null,
       call.end_reason ? (copy.call.endReasons[call.end_reason] ?? call.end_reason) : null,
       call.end_code !== null && call.end_reason !== 'bye' ? String(call.end_code) : null,

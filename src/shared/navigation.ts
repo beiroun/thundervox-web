@@ -48,12 +48,12 @@ interface NavigationItem {
   visibleTo?: (role: ConsoleRole) => boolean;
 }
 
-/** Navigation entries in the order they appear in the side column (and the drawer on a phone). */
+/** Navigation entries in the order they appear in the side column (and the drawer on a phone); Andrei's order. */
 export const navigationItems: ReadonlyArray<NavigationItem> = [
   { path: routePaths.dashboard, labelKey: 'dashboard', icon: IconLayoutDashboard },
-  { path: routePaths.events, labelKey: 'events', icon: IconActivity },
   { path: routePaths.sipAccounts, labelKey: 'sipAccounts', icon: IconPhone },
   { path: routePaths.consoleUsers, labelKey: 'consoleUsers', icon: IconUsers, visibleTo: mayManageConsoleUsers },
+  { path: routePaths.events, labelKey: 'events', icon: IconActivity },
   { path: routePaths.audit, labelKey: 'audit', icon: IconHistory },
   { path: routePaths.integration, labelKey: 'integration', icon: IconPlugConnected, visibleTo: mayViewIntegration },
   { path: routePaths.about, labelKey: 'about', icon: IconInfoCircle },

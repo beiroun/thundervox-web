@@ -307,6 +307,12 @@ export interface Copy {
       ended: string;
       /** From the answer to the end. */
       talk: string;
+      /** WAKE calls: when the callee came online after the push. */
+      calleeRegistered: string;
+      wokeAfter: (seconds: number) => string;
+      notWokenYet: string;
+      notWoken: string;
+      notWokenNote: string;
       endReason: string;
       endReasons: Record<string, string>;
       sipCallId: string;
@@ -744,6 +750,11 @@ const en: Copy = {
       answered: 'Answered',
       ended: 'Ended',
       talk: 'Talk',
+      calleeRegistered: 'Callee registered',
+      wokeAfter: (seconds) => `registered ${seconds} s after the start`,
+      notWokenYet: 'not yet',
+      notWoken: 'did not come online during the call',
+      notWokenNote: 'the journal keeps online/offline transitions: a phone that was already online and only re-registered is not seen here',
       endReason: 'How it ended',
       endReasons: {
         bye: 'hung up after the talk',
@@ -1236,6 +1247,11 @@ const ru: Copy = {
       answered: 'Ответ',
       ended: 'Конец',
       talk: 'Разговор',
+      calleeRegistered: 'Абонент зарегистрировался',
+      wokeAfter: (seconds) => `зарегистрировался через ${seconds} с после начала`,
+      notWokenYet: 'ещё нет',
+      notWoken: 'за время звонка в онлайн не вышел',
+      notWokenNote: 'журнал хранит переходы онлайн / офлайн: телефон, который уже был онлайн и только перерегистрировался, здесь не виден',
       endReason: 'Чем кончился',
       endReasons: {
         bye: 'положили трубку после разговора',

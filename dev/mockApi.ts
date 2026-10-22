@@ -325,15 +325,16 @@ function createState(): MockState {
     registrationEvent(minutesAgo(68), '20000002', 'ONLINE', 'sip:20000002@178.74.67.31:5060', '178.74.67.31:5060', 'Beward DKS15122 v3.2.6'),
     serviceCallEvent(minutesAgo(61), 'TOKEN', 'PUT', '/service/sip-accounts/CLIENT/0001234567', 'ENSURE', '10000001', 200, 38, null),
     serviceCallEvent(minutesAgo(52), 'TOKEN', 'GET', '/service/sip-accounts/CLIENT/0001234567/registration', 'REGISTRATION', '10000001', 200, 11, null),
-    callEvent(minutesAgo(50), sipCallA, 'WAKE', '20000001', '10000001', 'ANSWERED', 0.1, 0.9, 'bye', 200),
+    callEvent(minutesAgo(50), sipCallA, 'WAKE', '20000001', '10000001', 'ANSWERED', 0.1, 0.9, 'bye', 200, 0.07),
     pushEvent(minutesAgo(50), sipCallA, 'LIVE', '20000001', panel, '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 142, '{"call_id":"…","caller_id":"178.74.67.30:5060","callee_id":"0001234567"}', null),
     registrationEvent(minutesAgo(49.9), '10000001', 'ONLINE', 'sip:10000001@10.20.30.40:51234;transport=tcp', '95.167.20.11:51234', 'Modus iOS 4.12 (linphone)'),
     registrationEvent(minutesAgo(48), '10000001', 'OFFLINE', null, null, null),
-    callEvent(minutesAgo(35), sipCallB, 'WAKE', '20000002', '10000002', 'NO_ANSWER', null, 1.5, 'window', 480),
+    callEvent(minutesAgo(35), sipCallB, 'WAKE', '20000002', '10000002', 'NO_ANSWER', null, 1.5, 'window', 480, null),
+    registrationEvent(minutesAgo(30), '20000002', 'OFFLINE', null, null, null),
     pushEvent(minutesAgo(35), sipCallB, 'LIVE', '20000002', '178.74.67.31:5060', '10000002', '0001234568', push.url, 'FAILED', null, 2, 4012, null, 'I/O error on POST request: connect timed out'),
     serviceCallEvent(minutesAgo(26), 'UNKNOWN_TOKEN', 'PUT', '/service/sip-accounts/CLIENT/0001234569', 'ENSURE', null, 401, 3, 'Unknown or revoked service token'),
     pushEvent(minutesAgo(20), 'test-1760000000', 'TEST', '20000001', panel, '10000001', '0001234567', push.url, 'DELIVERED', 200, 1, 98, '{"call_id":"…"}', null),
-    callEvent(minutesAgo(12), sipCallC, 'RELAY', '20000001', '10000002', 'CANCELED', null, 0.3, 'cancel', 487),
+    callEvent(minutesAgo(12), sipCallC, 'RELAY', '20000001', '10000002', 'CANCELED', null, 0.3, 'cancel', 487, null),
     serviceCallEvent(minutesAgo(9), 'TOKEN', 'GET', '/service/sip-accounts/PANEL/178.74.67.99:5060', 'READ', null, 410, 7, 'No PANEL number with external id 178.74.67.99:5060'),
     serviceCallEvent(minutesAgo(3), 'TOKEN', 'PUT', '/service/sip-accounts/CLIENT/0001234568', 'ENSURE', '10000002', 200, 21, null),
   ].map((event, index) => ({ ...event, id: index + 1, key: `${event.category.toLowerCase()}-${index + 1}` }));
@@ -383,7 +384,7 @@ function registrationEvent(
   };
 }
 
-/** [answeredAfterMinutes] and [endedAfterMinutes] count from the start; null = never answered. */
+/** [answeredAfterMinutes], [endedAfterMinutes] and [registeredAfterMinutes] count from the start; null = never. */
 function callEvent(
   startedAt: string,
   sipCallId: string,
@@ -395,6 +396,7 @@ function callEvent(
   endedAfterMinutes: number | null,
   endReason: string | null,
   endCode: number | null,
+  registeredAfterMinutes: number | null,
 ): UnnumberedEvent {
   const startMs = Date.parse(startedAt.slice(0, 23));
   const after = (minutes: number | null) => (minutes === null ? null : serverTime(new Date(startMs + minutes * 60_000)));
@@ -419,6 +421,7 @@ function callEvent(
       end_reason: endReason,
       end_code: endCode,
       outcome,
+      callee_registered_at: mode === 'WAKE' ? after(registeredAfterMinutes) : null,
     },
   };
 }
@@ -1056,13 +1059,17 @@ const routes: Route[] = [
         throw new ApiFailure(insufficientPrivilegesStatus, `Role ${actor.role} may not read ${requested} events`, 'Недостаточно прав для этого действия');
       }
       const problemsOnly = query.get('problems') === 'true';
+      const rawQuery = query.get('query');
+      // As the server: in the mixed log without a search only panels' registrations come along
+      const panelsOnly = !requested && !rawQuery?.trim();
       const page = Math.max(0, Number(query.get('page') ?? 0));
       const size = Math.min(200, Math.max(1, Number(query.get('size') ?? 50)));
       const shown = [...state.events]
         .filter((event) => (requested ? event.category === requested : categories.includes(event.category)))
         .filter((event) => !problemsOnly || isProblem(event))
+        .filter((event) => !panelsOnly || !event.registration || event.registration.account?.kind === 'PANEL')
         .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
-      const found = smartSearch(shown, query.get('query'), eventDocument, eventExactKeys);
+      const found = smartSearch(shown, rawQuery, eventDocument, eventExactKeys);
       return { items: found.slice(page * size, page * size + size), total: found.length, page, size, categories };
     },
   },
@@ -1101,6 +1108,9 @@ const routes: Route[] = [
  */
 /** What did not get through, as the server's journals define it. */
 function isProblem(event: ServerEvent): boolean {
+  if (event.registration) {
+    return event.registration.kind === 'OFFLINE' && event.registration.account?.kind === 'PANEL';
+  }
   if (event.call) {
     return event.call.outcome === 'NO_ANSWER' || event.call.outcome === 'FAILED';
   }

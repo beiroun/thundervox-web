@@ -11,6 +11,7 @@ import { callOutcomeColor, pushOutcomeColor, registrationColor } from '@/pages/E
 import {
   ServiceCallStatusBadge,
   callTalkSeconds,
+  callWakeSeconds,
   eventTitle,
   serviceCallBackend,
 } from '@/pages/Events/eventPresentation';
@@ -71,7 +72,7 @@ function RegistrationCard({ registration, occurredAt }: { registration: Registra
   return (
     <>
       <Group gap="sm">
-        <Badge color={registrationColor(registration.kind)} variant="light">
+        <Badge color={registrationColor(registration.kind, account?.kind)} variant="light">
           {copy.states[registration.kind]}
         </Badge>
         {account && (
@@ -133,6 +134,11 @@ function CallCard({ call }: { call: CallEvent }) {
         <CardField label={copy.answered}>{call.answered_at ? formatServerTime(call.answered_at) : null}</CardField>
         <CardField label={copy.ended}>{call.ended_at ? formatServerTime(call.ended_at) : null}</CardField>
         <CardField label={copy.talk}>{talk !== null ? formatSpan(talk) : null}</CardField>
+        {call.mode === 'WAKE' && (
+          <CardField label={copy.calleeRegistered} wide>
+            <CalleeRegistration call={call} />
+          </CardField>
+        )}
         <CardField label={copy.endReason} wide>
           {call.end_reason && (
             <>
@@ -145,6 +151,31 @@ function CallCard({ call }: { call: CallEvent }) {
           <CopyableValue value={call.sip_call_id} label={copy.sipCallId} />
         </CardField>
       </CardFields>
+    </>
+  );
+}
+
+/**
+ * Whether the wake push reached the phone: the callee's number came online while its call waited. The journal
+ * keeps transitions, so a number that was already online and only re-registered shows no time here.
+ */
+function CalleeRegistration({ call }: { call: CallEvent }) {
+  const { t } = useLang();
+  const copy = t.events.call;
+  const wake = callWakeSeconds(call);
+
+  if (wake !== null && call.callee_registered_at) {
+    return (
+      <>
+        <div>{copy.wokeAfter(wake)}</div>
+        <div className="tvx-field__note">{formatServerTime(call.callee_registered_at)}</div>
+      </>
+    );
+  }
+  return (
+    <>
+      <div>{call.outcome === 'RINGING' ? copy.notWokenYet : copy.notWoken}</div>
+      <div className="tvx-field__note">{copy.notWokenNote}</div>
     </>
   );
 }
