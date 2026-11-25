@@ -69,12 +69,22 @@ export function SipAccountCard() {
     );
   }
   if (isLoading) {
-    return <Loader size="sm" />;
+    return (
+      <>
+        <EntityCardHeader kicker={t.pages.sipAccount.kicker} title={idParam ?? ''} onBack={goBack} />
+        <Loader size="sm" />
+      </>
+    );
   }
   if (!account) {
     return (
       <>
-        <EntityCardHeader kicker={t.pages.sipAccount.kicker} title={idParam ?? ''} onBack={goBack} />
+        <EntityCardHeader
+          kicker={t.pages.sipAccount.kicker}
+          title={idParam ?? ''}
+          onBack={goBack}
+          onRefresh={refetch}
+        />
         <Alert color="red" title={t.table.loadError}>
           <Text size="sm" mb="sm">
             {describeApiError(error, t.api)}
@@ -91,10 +101,16 @@ export function SipAccountCard() {
       </>
     );
   }
-  return <SipAccountCardContent account={account} onBack={goBack} />;
+  return <SipAccountCardContent account={account} onBack={goBack} onRefresh={refetch} />;
 }
 
-function SipAccountCardContent({ account, onBack }: { account: SipAccount; onBack: () => void }) {
+interface SipAccountCardContentProps {
+  account: SipAccount;
+  onBack: () => void;
+  onRefresh: () => unknown;
+}
+
+function SipAccountCardContent({ account, onBack, onRefresh }: SipAccountCardContentProps) {
   const { t } = useLang();
   const navigate = useNavigate();
   const role = useAppSelector((state) => state.auth.user?.role);
@@ -180,6 +196,7 @@ function SipAccountCardContent({ account, onBack }: { account: SipAccount; onBac
         subtitle={[account.name, account.external_id].filter(Boolean).join(' · ')}
         actions={actions}
         onBack={onBack}
+        onRefresh={onRefresh}
       />
 
       {/* Unblocking runs without a dialog, so its failure is reported on the card */}

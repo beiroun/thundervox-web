@@ -505,6 +505,14 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+/* "Back", the record's key and "Refresh" stay one line, also on a phone; the badges may wrap below */
+.tvx-card__key {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
 .tvx-card__subtitle {
   margin-top: 8px;
   font-size: var(--tvx-text-nav);

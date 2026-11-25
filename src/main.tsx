@@ -14,6 +14,7 @@ import { RouterProvider } from 'react-router/dom';
 import { MantineProvider } from '@mantine/core';
 
 import { LangProvider } from '@/i18n/LangContext';
+import { printConsoleBanner } from '@/shared/printConsoleBanner';
 import { store } from '@/store/store';
 import { router } from '@/routes/routes';
 import { themeMantine } from '@/theme/themeMantine';
@@ -22,6 +23,9 @@ const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('index.html has no #root element');
 }
+
+// Module top level, not an effect: printed once per page load, StrictMode does not repeat it
+printConsoleBanner();
 
 // defaultColorScheme "auto" follows the operating system until the operator picks a theme; the same default is
 // applied before React mounts by the inline script in index.html, so there is no flash of the wrong scheme

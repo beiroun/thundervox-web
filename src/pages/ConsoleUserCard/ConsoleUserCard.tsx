@@ -38,14 +38,24 @@ export function ConsoleUserCard() {
   const user = users?.find((candidate) => candidate.id === id);
 
   if (isLoading) {
-    return <Loader size="sm" />;
+    return (
+      <>
+        <EntityCardHeader kicker={t.pages.consoleUser.kicker} title={idParam ?? ''} onBack={goBack} />
+        <Loader size="sm" />
+      </>
+    );
   }
   if (user) {
-    return <ConsoleUserCardContent user={user} onBack={goBack} />;
+    return <ConsoleUserCardContent user={user} onBack={goBack} onRefresh={refetch} />;
   }
   return (
     <>
-      <EntityCardHeader kicker={t.pages.consoleUser.kicker} title={idParam ?? ''} onBack={goBack} />
+      <EntityCardHeader
+        kicker={t.pages.consoleUser.kicker}
+        title={idParam ?? ''}
+        onBack={goBack}
+        onRefresh={users ? undefined : refetch}
+      />
       {users ? (
         <Alert color="gray" title={t.consoleUserCard.notFoundTitle}>
           <Text size="sm" mb="sm">
@@ -74,7 +84,13 @@ export function ConsoleUserCard() {
   );
 }
 
-function ConsoleUserCardContent({ user, onBack }: { user: ConsoleUser; onBack: () => void }) {
+interface ConsoleUserCardContentProps {
+  user: ConsoleUser;
+  onBack: () => void;
+  onRefresh: () => unknown;
+}
+
+function ConsoleUserCardContent({ user, onBack, onRefresh }: ConsoleUserCardContentProps) {
   const { t } = useLang();
   const me = useAppSelector((state) => state.auth.user);
   const grantableRoles = me ? manageableRoles(me.role) : [];
@@ -143,6 +159,7 @@ function ConsoleUserCardContent({ user, onBack }: { user: ConsoleUser; onBack: (
         subtitle={t.roles.titles[user.role]}
         actions={actions}
         onBack={onBack}
+        onRefresh={onRefresh}
       />
 
       {updateState.isError && (
