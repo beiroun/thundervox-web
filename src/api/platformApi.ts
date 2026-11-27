@@ -3,9 +3,9 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 
 import { baseQueryWithReauth, unwrapEnvelope } from '@/api/baseQuery';
-import type { BaseApiResponse, PlatformInfo } from '@/api/types';
+import type { BaseApiResponse, PlatformInfo, SipEndpoint } from '@/api/types';
 
-/** Platform-level endpoints of the server: identity and version. Public, no session needed. */
+/** Platform-level endpoints of the server: identity and version (public), where devices register (session). */
 export const platformApi = createApi({
   reducerPath: 'platformApi',
   baseQuery: baseQueryWithReauth,
@@ -14,7 +14,14 @@ export const platformApi = createApi({
       query: () => '/info',
       transformResponse: (response: BaseApiResponse<PlatformInfo>) => unwrapEnvelope(response),
     }),
+    getSipEndpoint: builder.query<SipEndpoint, void>({
+      query: () => '/info/sip',
+      transformResponse: (response: BaseApiResponse<SipEndpoint>) => unwrapEnvelope(response),
+    }),
   }),
 });
 
-export const { useGetPlatformInfoQuery } = platformApi;
+export const { useGetPlatformInfoQuery, useGetSipEndpointQuery } = platformApi;
+
+/** "sip.example.com:5060" - what a device is configured with. */
+export const sipAddress = (endpoint: SipEndpoint) => `${endpoint.domain}:${endpoint.port}`;

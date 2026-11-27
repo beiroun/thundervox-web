@@ -25,6 +25,12 @@ export interface PlatformInfo {
   license: string;
 }
 
+/** GET /info/sip: where devices register - the SIP domain (also the realm) and the core's UDP/TCP port. */
+export interface SipEndpoint {
+  domain: string;
+  port: number;
+}
+
 // ---- Console access ----
 
 export type ConsoleRole = 'READER' | 'ADMINISTRATOR' | 'SUPER_ADMINISTRATOR';

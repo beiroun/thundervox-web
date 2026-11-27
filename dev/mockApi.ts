@@ -28,6 +28,7 @@ import type {
   LoginRequest,
   LoginResponse,
   PlatformInfo,
+  SipEndpoint,
   CallEvent,
   PushDelivery,
   PushSettings,
@@ -660,6 +661,11 @@ const routes: Route[] = [
     pattern: /^\/info$/,
     isPublic: true,
     handle: (): PlatformInfo => ({ name: 'thundervox-server', version: 'mock', license: 'BUSL-1.1' }),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/info\/sip$/,
+    handle: (): SipEndpoint => ({ domain: realm, port: 5060 }),
   },
   {
     method: 'POST',

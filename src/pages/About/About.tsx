@@ -2,15 +2,16 @@
 // Copyright (c) 2026 Andrei Baranov (84softworks). Licensed under the Business Source License 1.1 - see LICENSE.
 import type { ReactNode } from 'react';
 
-import { useGetPlatformInfoQuery } from '@/api/platformApi';
+import { sipAddress, useGetPlatformInfoQuery, useGetSipEndpointQuery } from '@/api/platformApi';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useLang } from '@/i18n/LangContext';
 import { brand, consoleVersion } from '@/shared/brand';
 
-/** What this console is, which versions are running, and the legal facts: product, author, license. */
+/** What this console is, which versions are running and where devices register, and the legal facts. */
 export function About() {
   const { t } = useLang();
   const { data: platformInfo } = useGetPlatformInfoQuery();
+  const { data: sipEndpoint } = useGetSipEndpointQuery();
 
   return (
     <>
@@ -23,6 +24,13 @@ export function About() {
         <FactRow label={t.about.server}>
           {platformInfo ? `${platformInfo.name} ${platformInfo.version}` : t.about.serverUnknown}
         </FactRow>
+      </section>
+
+      <section className="tvx-section">
+        <h2 className="tvx-section__title">{t.about.sip}</h2>
+        <FactRow label={t.about.sipDomain}>{sipEndpoint?.domain ?? t.common.none}</FactRow>
+        <FactRow label={t.about.sipPort}>{sipEndpoint?.port ?? t.common.none}</FactRow>
+        <FactRow label={t.about.sipAddress}>{sipEndpoint ? sipAddress(sipEndpoint) : t.common.none}</FactRow>
       </section>
 
       <section className="tvx-section">

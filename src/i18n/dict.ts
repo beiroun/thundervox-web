@@ -150,6 +150,8 @@ export interface Copy {
     presenceLede: string;
     activity: string;
     activityLede: string;
+    /** Prefix of the SIP address under the title: "<sipAddress> sip.example.com:5060". */
+    sipAddress: string;
   };
   sipAccounts: {
     kinds: Record<SipAccountKind, string>;
@@ -443,6 +445,10 @@ export interface Copy {
     console: string;
     server: string;
     serverUnknown: string;
+    sip: string;
+    sipDomain: string;
+    sipPort: string;
+    sipAddress: string;
     legal: string;
     product: string;
     productValue: string;
@@ -582,6 +588,7 @@ const en: Copy = {
     presenceLede: 'Who is registered: numbers online and offline add up to the same total.',
     activity: 'Activity',
     activityLede: 'Wake pushes sent, panels coming online and calls started, per bucket of the period.',
+    sipAddress: 'Devices register to',
   },
   sipAccounts: {
     kinds: { PANEL: 'Panel', CLIENT: 'Subscriber' },
@@ -939,6 +946,10 @@ const en: Copy = {
     console: 'Console',
     server: 'Server',
     serverUnknown: 'not reachable',
+    sip: 'SIP core',
+    sipDomain: 'SIP domain (realm)',
+    sipPort: 'Port, UDP and TCP',
+    sipAddress: 'Address for devices',
     legal: 'Legal',
     product: 'Product',
     productValue: 'ThunderVox – SIP platform for IP devices by 84softworks',
@@ -1079,6 +1090,7 @@ const ru: Copy = {
     presenceLede: 'Кто зарегистрирован: номера онлайн и офлайн в сумме дают то же «всего».',
     activity: 'Активность',
     activityLede: 'Отправленные пуши, вышедшие на связь панели и начатые звонки по отрезкам периода.',
+    sipAddress: 'Устройства регистрируются на',
   },
   sipAccounts: {
     kinds: { PANEL: 'Панель', CLIENT: 'Абонент' },
@@ -1436,6 +1448,10 @@ const ru: Copy = {
     console: 'Консоль',
     server: 'Сервер',
     serverUnknown: 'недоступен',
+    sip: 'SIP-ядро',
+    sipDomain: 'SIP-домен (realm)',
+    sipPort: 'Порт, UDP и TCP',
+    sipAddress: 'Адрес для устройств',
     legal: 'Правовая информация',
     product: 'Продукт',
     productValue: 'ThunderVox – SIP-платформа IP-устройств от 84softworks',

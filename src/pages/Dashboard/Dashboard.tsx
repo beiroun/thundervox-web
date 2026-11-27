@@ -7,6 +7,7 @@ import type { AreaChartSeries } from '@mantine/charts';
 
 import { describeApiError } from '@/api/baseQuery';
 import { useGetDashboardQuery } from '@/api/dashboardApi';
+import { sipAddress, useGetSipEndpointQuery } from '@/api/platformApi';
 import type { Dashboard as DashboardData, DashboardRange } from '@/api/types';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { useLang } from '@/i18n/LangContext';
@@ -67,12 +68,14 @@ const withoutFillOnTotal = (series: AreaChartSeries) => (series.name === 'total'
 /**
  * Landing page: the fleet and presence over a selectable period as two charts that share the total as their
  * ceiling, activity per bucket below, and the numbers right now as a metric strip on top. The server's identity
- * moved to About and the footer - this page is about the numbers, not about the server.
+ * moved to About and the footer - this page is about the numbers; only the SIP address the devices register to
+ * stays under the title, so a glance tells which deployment (port) the numbers belong to.
  */
 export function Dashboard() {
   const { t } = useLang();
   const [range, setRange] = useState<DashboardRange>('1h');
   const { data, error, isLoading } = useGetDashboardQuery(range, { pollingInterval: refreshMs });
+  const { data: sipEndpoint } = useGetSipEndpointQuery();
   // A day is 96 buckets: three bars side by side get under a pixel each on a phone, one stacked bar stays readable
   const isPhone = useIsPhone();
 
@@ -125,6 +128,12 @@ export function Dashboard() {
           />
         }
       />
+
+      {sipEndpoint && (
+        <Text c="dimmed" size="sm" mb="md">
+          {t.dashboard.sipAddress} {sipAddress(sipEndpoint)}
+        </Text>
+      )}
 
       {error && <Alert color="red">{describeApiError(error, t.api)}</Alert>}
       {isLoading && !data && <Loader size="sm" />}
