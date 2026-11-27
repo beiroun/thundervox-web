@@ -41,7 +41,7 @@ interface NavigationItem {
   labelKey: keyof Copy['nav'];
   /**
    * Drawn before the label. The icon, not a dot, marks the active item; the choice per kind of page is the
-   * 84softworks vocabulary (NewLight/84softworks-design/design.md), the same in every product console.
+   * 84softworks vocabulary (84softworks/84softworks-design/design.md), the same in every product console.
    */
   icon: TablerIcon;
   /** Hidden from roles the server would refuse anyway; absent = every role. */
